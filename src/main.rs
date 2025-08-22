@@ -323,13 +323,13 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
 async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
 
-    let item_id: i64=payload.get("item_id").and_then(|x|Some(x.as_i64().unwrap())).unwrap();
+    let item_id: i64=payload.get("_id").and_then(|x|Some(x.as_i64().unwrap())).unwrap();
     
     
 
 
     
-    let findo = doc! {"item_id":item_id};
+    let findo = doc! {"_id":item_id};
 
     let client_uri = env::var("MONGODB_URI")
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
