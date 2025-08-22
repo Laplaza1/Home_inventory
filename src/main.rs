@@ -1,4 +1,4 @@
-use bson::{datetime, oid::Error, Array, DateTime, Document};
+use bson::{datetime, oid::Error, Array, DateTime, Document,Decimal128};
 use ::futures::StreamExt;
 use serde_json::{
     Value,
@@ -40,12 +40,14 @@ struct User{
 
 #[derive(Debug, Serialize, Deserialize,Clone)]
 struct Item {
-    item_id: i64,
+    
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    id: Option<ObjectId>, // Optional ObjectId for _id
     item_name: String,
     category: Vec<String>,
     quantity: i64,
     method_measure:String,
-    unit_price: f32,
+    unit_price: Decimal128,
     date: DateTime
 }
 #[derive(Debug, Serialize, Deserialize,Clone)]
@@ -86,6 +88,10 @@ async fn main() {
      let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
+
+
+
+
 
 //User functions
 
@@ -170,6 +176,9 @@ async fn delete_user(){
 
 
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -190,6 +199,14 @@ async fn login()-> Result<(Json<Token>),(StatusCode,String)>{
 
 }
 
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -225,7 +242,7 @@ async fn get_item()->Result<Json<Vec<Item>>,(StatusCode,String)>{
 
 
 async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
-    let item_id: i64=payload.get("item_id").and_then(|x|Some(x.as_i64().unwrap())).unwrap();
+    
     
     let item_name: String = payload.get("item_name").and_then(|x|Some(x.to_string())).unwrap();
 
@@ -234,13 +251,13 @@ async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
     let method_measure: String = payload.get("method_measure").and_then(|x|Some(x.to_string())).unwrap();
 
-    let unit_price:f32 = payload.get("unit_price").and_then(|x|Some(x.to_string().parse::<f32>().ok())).unwrap().unwrap();
+    let unit_price:Decimal128 = payload.get("unit_price").and_then(|x|Some(x.to_string().parse::<Decimal128>().ok())).unwrap().unwrap();
 
     let date:DateTime=  payload.get("date").and_then(|x|Some(bson::DateTime::parse_rfc3339_str(x.to_string()))).unwrap().unwrap();
     
 
 
-    let new_item = Item{item_id,item_name,category,quantity,method_measure,unit_price,date};
+    let new_item = Item{id:None,item_name,category,quantity,method_measure,unit_price,date};
 
 
     let client_uri = env::var("MONGODB_URI")
@@ -304,6 +321,32 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
 }
 
-async fn delete_item(){
+async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
+
+    let item_id: i64=payload.get("item_id").and_then(|x|Some(x.as_i64().unwrap())).unwrap();
+    
+    
+
+
+    
+    let findo = doc! {"item_id":item_id};
+
+    let client_uri = env::var("MONGODB_URI")
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
+
+    let options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse client options: {}", e)))?;
+    let client = Client::with_options(options)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
+
+    let item: Collection<Item> = client.database("test").collection("item");
+
+    
+
+    let _cursor = item.delete_one(findo, None);
+
+    return Ok(Json(json!({"Success":true})))
+
 
 }
