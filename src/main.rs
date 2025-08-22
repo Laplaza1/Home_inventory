@@ -4,7 +4,7 @@ use serde_json::{
     Value,
     json
 };
-use tower::ServiceExt;
+
 use tower_http::cors::{CorsLayer, Any};
 use rand::{Rng};
 use axum::{
@@ -20,13 +20,14 @@ use mongodb::{
     bson::oid::ObjectId,
     bson::Bson
 };
-
 use serde::{Serialize, Deserialize};
+
+// for future additions
 use reqwest;
 use futures::{future::ok, io::Cursor, sink::SinkExt, TryStreamExt};
 use std::sync::Arc;
 use tokio::sync::broadcast;
-
+use tower::ServiceExt;
 
 
 
@@ -97,11 +98,12 @@ async fn main() {
 
 async fn create_user(Json(payload): Json<serde_json::Value>){
     println!("Creating User!");
-    
-    let username = payload.get("username")
+    //Checks if Username was sent
+    let _username = payload.get("username")
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::NOT_ACCEPTABLE, "Missing or invalid 'username' field".to_string()));
-    let password = payload.get("password")
+    //Checks if password was sent
+    let _password = payload.get("password")
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::NOT_ACCEPTABLE, "Missing or invalid 'password' field".to_string())) ;
 
@@ -142,11 +144,6 @@ async fn change_user(headers:HeaderMap, Json(payload): Json<serde_json::Value>)-
     let token = headers.get(COOKIE).and_then(|value|value.to_str().ok()).ok_or((StatusCode::BAD_REQUEST, "Missing or invalid Cookie header".to_string()));
     println!("User: {:?} was given token: {:#?}",user,token);
 
-
-
-    
-
-
     let client_uri = env::var("MONGODB_URI")
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
 
@@ -157,7 +154,7 @@ async fn change_user(headers:HeaderMap, Json(payload): Json<serde_json::Value>)-
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
 
     let user: Collection<User> = client.database("test").collection("user");
-    let curser = user
+    let _curser = user
         .find(None,None)
         .await
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
@@ -165,7 +162,7 @@ async fn change_user(headers:HeaderMap, Json(payload): Json<serde_json::Value>)-
 
 
 
-    return Ok("Yesnt".to_string())
+    return Ok("If you're reading this then ya changed information on user".to_string())
 }
 
 async fn delete_user(){
@@ -283,17 +280,11 @@ async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
 
     let item_id: i64=payload.get("item_id").and_then(|x|Some(x.as_i64().unwrap())).unwrap();
-    
     let item_name: String = payload.get("item_name").and_then(|x|Some(x.to_string())).unwrap();
-
     let category:Vec<String> = payload.get("category").and_then(|x|Some(x.as_array())).unwrap().unwrap().iter().map(|x|x.to_string()).collect();
-
     let quantity:  i64 = payload.get("quantity").and_then(|x|Some(x.as_i64())).unwrap().unwrap();
-
     let method_measure: String = payload.get("method_measure").and_then(|x|Some(x.to_string())).unwrap();
-
     let unit_price:f32 = payload.get("unit_price").and_then(|x|Some(x.to_string().parse::<f32>().ok())).unwrap().unwrap();
-
     let date:DateTime=  payload.get("date").and_then(|x|Some(bson::DateTime::parse_rfc3339_str(x.to_string()))).unwrap().unwrap();
     
 
@@ -311,9 +302,6 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
 
     let itemo: Collection<Item> = client.database("test").collection("item");
-
-    
-
     let _cursor = itemo.update_one(find_item,new_item,None).await;
 
 
@@ -324,12 +312,7 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
 
     let item_id: i64=payload.get("_id").and_then(|x|Some(x.as_i64().unwrap())).unwrap();
-    
-    
-
-
-    
-    let findo = doc! {"_id":item_id};
+    let filtered_document = doc! {"_id":item_id};
 
     let client_uri = env::var("MONGODB_URI")
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
@@ -344,7 +327,7 @@ async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
     
 
-    let _cursor = item.delete_one(findo, None);
+    let _cursor = item.delete_one(filtered_document, None);
 
     return Ok(Json(json!({"Success":true})))
 
