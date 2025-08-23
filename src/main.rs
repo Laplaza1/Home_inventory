@@ -32,6 +32,16 @@ use tower::ServiceExt;
 
 
 
+
+#[derive(Debug,Serialize,Deserialize,Clone)]
+struct Change{
+    user_name:String,
+    item_id:Option<ObjectId>,
+    old_quantity:i64,
+    new_quantity:i64
+}
+
+
 #[derive(Debug, Serialize, Deserialize,Clone)]
 struct User{
     user_name:String,
@@ -303,6 +313,7 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
     let itemo: Collection<Item> = client.database("test").collection("item");
     let _cursor = itemo.update_one(find_item,new_item,None).await;
+    let change_log :&Collection<Change>=client.database("test").collection("change");
 
 
     return Ok(Json(json!({"Success":true})))
@@ -330,6 +341,24 @@ async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
     let _cursor = item.delete_one(filtered_document, None);
 
     return Ok(Json(json!({"Success":true})))
+
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//Fun functions
+
+
+
+
+async fn display_fractial()->Result<&Json<&Value>,(StatusCode,String)>{
+
+
 
 
 }
