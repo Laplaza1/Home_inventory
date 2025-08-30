@@ -31,13 +31,13 @@ section{
 }
 
 #item_form{
-
+    
     justify-items: center;
     display: inline;
 }
 #items-form-box{
     justify-self: center;
-
+    text-align: center;
 }
 
 #create_title{
@@ -98,6 +98,7 @@ body {
     max-width: 600px;
     margin: 20px auto;
     padding: 20px;
+    text-align: center;
 }
 .categories {
     display: flex;

@@ -18,7 +18,7 @@
     <div id="items-form-box">
         <form id="item_form">
             <label>Name</label>
-            <input id="nameInput" value=""><br>
+            <input id="nameInput" type="text"  value=""><br>
             <label>Category</label>
             <input id="CategoryInput" value="" placeholder="Put Category here"><br>
             <label>Method of measure</label>
@@ -33,9 +33,9 @@
                 <option>L</option>
             </select><br>
             <label>Amount</label>
-            <input id="amountInput" value="" placeholder="Put Amount here"><br>
+            <input id="amountInput" type="number" value="" placeholder="Put Amount here"><br>
             <label>Price</label>
-            <input id="priceInput" value="" placeholder="Put Price here"><br>
+            <input id="priceInput" min="0.00" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" value="" placeholder="Put Price here"><br>
             <label for="categories">categories:</label>
             <div id="categories" class="categories">
                 <div class="toggle-button" data-value="Meat" onclick="toggleSelection(this)">Meat</div>

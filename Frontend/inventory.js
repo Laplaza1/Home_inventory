@@ -144,7 +144,9 @@ document.addEventListener("DOMContentLoaded",()=>
                                 document.getElementById("nameInput").value = event.target.parentElement.parentElement.parentElement.querySelector('#nameElem').textContent
                                 
                                 //categoryElem
-                                document.getElementById("CategoryInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#categoryElem").textContent
+                                //document.querySelector("#categories").querySelectorAll("div").forEach((item)=>{if (console.log(item.dataset.value))})
+                                document.querySelector("#categoryElem").textContent.split(",").map((itemo)=>{console.log(itemo);document.querySelector(`[data-value=${itemo}]`).className="toggle-button selected"})
+                                //document.getElementById("CategoryInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#categoryElem").textContent
 
 
                                 //method_measure
@@ -155,8 +157,7 @@ document.addEventListener("DOMContentLoaded",()=>
 
 
                                 //unit_priceElem
-                                document.getElementById("priceInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#unit_priceElem").textContent
-
+                                document.getElementById("priceInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#unit_priceElem").textContent.substring(1,event.target.parentElement.parentElement.parentElement.querySelector("#unit_priceElem").textContent.length)
 
                                 //dateElem
                                 document.getElementById("timeInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#dateElem").textContent
