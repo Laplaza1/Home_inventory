@@ -1,5 +1,6 @@
 
 .items-wrapper {
+    
   position: fixed;
   z-index: 9;
   background-color: #f1f1f1;
@@ -15,6 +16,9 @@
 }
 
 .items-wrapperheader {
+
+  border:2px solid lightslategray;
+  border-radius: 5%;
   position: absolute;
   padding: 10px;
   cursor: move;
@@ -57,6 +61,8 @@ nav ul{
 }
 
 nav ul a {
+    color: black;
+    text-decoration: none;
     text-align: center;
     display: block;
     margin-left: -40px;
