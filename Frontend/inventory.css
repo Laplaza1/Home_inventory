@@ -1,0 +1,149 @@
+
+.items-wrapper {
+  position: fixed;
+  z-index: 9;
+  background-color: #f1f1f1;
+  text-align: center;
+  border: 3px solid black;
+  justify-items: center;
+}
+
+
+#measureDiv{
+    display: flex;
+    
+}
+
+.items-wrapperheader {
+  position: absolute;
+  padding: 10px;
+  cursor: move;
+  z-index: 0;
+  background-color: lightgray;
+  color: black;
+  justify-items: center;
+}
+
+section{
+    width: 33%;
+    padding-left: 4%;
+    padding-right: 4%;
+}
+
+#item_form{
+
+    justify-items: center;
+    display: inline;
+}
+#items-form-box{
+    justify-self: center;
+
+}
+
+#create_title{
+    justify-self: center;
+}
+
+nav{
+   display: flex; 
+   justify-content: center;
+
+}
+nav ul{
+    border-radius: 9%;
+    width: 25%;
+    border: 1px solid black;
+    margin: 1%;
+}
+
+nav ul a {
+    text-align: center;
+    display: block;
+    margin-left: -40px;
+    background-color: lightgray;
+}
+
+#buttonDiv{
+
+    display: flex;
+}
+
+#buttonSection{
+
+    margin-left: 5%;
+    margin-right: 5%;
+}
+
+
+
+
+button:hover{
+     opacity: 1;
+}
+
+#popup{
+    background: linear-gradient(90deg,rgba(172, 191, 191, 1) 0%, rgba(118, 171, 139, 1) 50%, rgba(230, 227, 213, 1) 100%);
+    position: fixed;
+    display: none;
+    z-index: 1;
+    justify-content: center;
+    justify-items: center;
+    justify-self: center;
+    padding: 20px;
+    border: 2px solid black;
+    text-align: center;
+}
+body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+}
+.categories {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    align-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+.toggle-button {
+    padding: 10px 20px;
+    width: 33%;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #f8f9fa;
+    transition: all 0.3s;
+    justify-items: center;
+    text-align: center;
+
+}
+.toggle-button.selected {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+.toggle-button:hover {
+    background-color: #e0e0e0;
+}
+.toggle-button.selected:hover {
+    background-color: #0056b3;
+}
+button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+button:hover {
+    background-color: #0056b3;
+}
+#output {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+}

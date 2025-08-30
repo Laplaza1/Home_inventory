@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" >
-    <script  src="inventory.js"></script>
+    <script  src="create.js"></script>
     <link rel="stylesheet" href="inventory.css">
     <title>Document</title>
 </head>
@@ -12,21 +12,11 @@
         <ul><a href="inventory.html">Inventory</a></ul>
 
         <ul><a href="create.html">Create</a></ul>
+
     </nav>
-    <h1>Inventory</h1>
-    <div id="items-box">
-    
-
-
-
-
-
-    </div>
-    <div id="hiddenForm">
-
-        <form id="popup">
-            <label id="idLabel">ID: </label><label id="idLabel2"></label>
-            <input type="hidden" id="idInput" value=""><br>
+    <h1 id="create_title">Create Inventory</h1>
+    <div id="items-form-box">
+        <form id="item_form">
             <label>Name</label>
             <input id="nameInput" value=""><br>
             <label>Category</label>
@@ -56,14 +46,13 @@
             </div>
             <input type="hidden" id="timeInput" value=""><br>
             <button id="submitButton" type="button" onclick=getSelectedCategories()>Submit</button>
-            <button id="closeButton" type="button">Close</button>
-
 
         </form>
 
 
+
+
+
     </div>
 </body>
-
-        
 </html>

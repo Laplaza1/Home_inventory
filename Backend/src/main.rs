@@ -1,4 +1,4 @@
-use bson::{datetime, oid::Error, Array, DateTime, Document,Decimal128};
+use bson::{ oid::Error, Array, DateTime, Document,Decimal128};
 use chrono::{Utc};
 use ::futures::StreamExt;
 use serde_json::{
@@ -91,6 +91,7 @@ async fn main() {
     //Item
     .route("/item",post(insert_item))
     .route("/item",get(get_item))
+    .route("/specificItem/{item_id}",get(specific_Item))
     .route("/item/{item_id}",put(change_item))
     .route("/item/{item_id}",delete(delete_item))
     .layer(cors);
@@ -245,6 +246,34 @@ async fn get_item()->Result<Json<Vec<Item>>,(StatusCode,String)>{
     let items:Vec<Item> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x))})?;
     return Ok(Json(items))
 }
+
+
+async fn specific_Item(Path(item_id): Path<i64>)->Result<Json<Vec<Item>>,(StatusCode,String)>{
+    let client_uri = env::var("MONGODB_URI")
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
+
+    let options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse client options: {}", e)))?;
+    let client = Client::with_options(options)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
+    let item: Collection<Item> = client.database("test").collection("item");
+
+    println!("Item var: {:#?}",item_id);
+
+    let item_Id = doc!{"_id":item_id};
+
+    let curser = item
+        .find(item_Id,None)
+        .await
+        .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
+
+     let items:Vec<Item> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x))})?;
+    
+
+    return Ok(Json(Item))
+}
+
 
 
 async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
