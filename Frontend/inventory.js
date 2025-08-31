@@ -20,8 +20,9 @@ document.addEventListener("DOMContentLoaded",()=>
         document.getElementById("closeButton").addEventListener("click",(event)=>
         {
         event.target.parentElement.style.display = "none"
-        document.getElementById("items-wrapper").style.opacity = 1
-
+        document.querySelectorAll("#items-wrapper").forEach(elem=>{elem.style.opacity = 1});
+        document.querySelectorAll("#editButton").forEach(elem=>{elem.disabled =false})
+        document.querySelectorAll(".toggle-button.selected").forEach(elem=>{elem.className= "toggle-button"})
         console.log("Tried to close")    
         })
         fetch("https://home-inventory-bml1.onrender.com/item")
@@ -128,14 +129,14 @@ document.addEventListener("DOMContentLoaded",()=>
                         box.appendChild(button_div)
                    
                         document.getElementById("items-box").appendChild(box)
-                        document.getElementById("editButton").addEventListener("click",(event)=>
+                        edit_button.addEventListener("click",(event)=>
                             {
                             
                                 
                                 //fetch(`https://home-inventory-bml1.onrender.com/item/${event.target.parentElement.parentElement.parentElement.querySelector('[id]').textContent}`)
                                 document.getElementById("popup").style.display = "block"
-                                document.getElementById("items-wrapper").style.opacity = .5
-
+                                //event.target.parentElement.parentElement.parentElement.querySelector("#items-wrapper").style.opacity = .5
+                                document.querySelectorAll("#items-wrapper").forEach(elem=>{elem.style.opacity = .5})
                                 //let ids = ["id","nameInput","CategoryInput","selectInput","amountInput","timeInput","submitButton","closeButton"]
                                 document.getElementById("idInput").value = event.target.parentElement.parentElement.parentElement.querySelector('.id').textContent
                                 document.getElementById("idLabel2").innerHTML = event.target.parentElement.parentElement.parentElement.querySelector('.id').textContent
@@ -145,9 +146,9 @@ document.addEventListener("DOMContentLoaded",()=>
                                 
                                 //categoryElem
                                 //document.querySelector("#categories").querySelectorAll("div").forEach((item)=>{if (console.log(item.dataset.value))})
-                                document.querySelector("#categoryElem").textContent.split(",").map((itemo)=>{console.log(itemo);document.querySelector(`[data-value=${itemo}]`).className="toggle-button selected"})
+                                event.target.parentElement.parentElement.parentElement.querySelector("#categoryElem").textContent.split(",").map((itemo)=>{console.log(itemo);document.querySelector(`[data-value=${itemo}]`).className="toggle-button selected"})
                                 //document.getElementById("CategoryInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#categoryElem").textContent
-
+                                console.log( event.target.parentElement.parentElement.parentElement.querySelector("#categoryElem").textContent)
 
                                 //method_measure
                                 document.getElementById("selectInput").value = event.target.parentElement.parentElement.parentElement.querySelector('#method_measure').textContent
@@ -161,12 +162,15 @@ document.addEventListener("DOMContentLoaded",()=>
 
                                 //dateElem
                                 document.getElementById("timeInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#dateElem").textContent
-
-                                
+                                document.querySelectorAll("#editButton").forEach(elem=>{elem.disabled =true})
+                                console.log(`X${scrollX}  Y${scrollY}`)
+                                document.getElementById("popup").style.top = `${window.scrollY}px`;
+                                document.getElementById("popup").style.left = `${window.scrollX}px`;
 
                             })
-                       dragElement(document.getElementById("items-wrapper"));
-                        Object.keys(element).forEach(key => {
+                       //document.querySelectorAll("#items-wrapper").forEach((elem, index)=>{dragElement(elem);elem.style.top =`${index*600+100}px`});
+                       
+                       Object.keys(element).forEach(key => {
                         console.log(`${key}: ${isObject(element[key])}`);
                     })
                     }

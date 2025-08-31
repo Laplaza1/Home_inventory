@@ -248,7 +248,7 @@ async fn get_item()->Result<Json<Vec<Item>>,(StatusCode,String)>{
 }
 
 
-async fn specific_Item(Path(item_id): Path<i64>)->Result<Json<Vec<Item>>,(StatusCode,String)>{
+async fn specific_Item()->Result<Json<Vec<Item>>,(StatusCode,String)>{
     let client_uri = env::var("MONGODB_URI")
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
 
@@ -259,12 +259,12 @@ async fn specific_Item(Path(item_id): Path<i64>)->Result<Json<Vec<Item>>,(Status
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
     let item: Collection<Item> = client.database("test").collection("item");
 
-    println!("Item var: {:#?}",item_id);
+    println!("Item var: {:#?}",item);
 
-    let item_Id = doc!{"_id":item_id};
+    
 
     let curser = item
-        .find(item_Id,None)
+        .find(None,None)
         .await
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
 
@@ -278,8 +278,9 @@ async fn specific_Item(Path(item_id): Path<i64>)->Result<Json<Vec<Item>>,(Status
 
 async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
     
-    
-    let item_name: String = payload.get("item_name").and_then(|x|Some(x.to_string())).unwrap();
+    println!("payload: {:#?}",payload);
+    let item_name: Value = payload.get("item_name").unwrap().clone();
+        if item_name.is_string() {println!("{:#?}",item_name)}
 
     let category:Vec<String> = payload.get("category").and_then(|x|Some(x.as_array())).unwrap().unwrap().iter().map(|x|x.to_string()).collect();
     let quantity:  i64 = payload.get("quantity").and_then(|x|Some(x.as_i64())).unwrap().unwrap();
@@ -288,13 +289,13 @@ async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
     let unit_price:Decimal128 = payload.get("unit_price").and_then(|x|Some(x.to_string().parse::<Decimal128>().ok())).unwrap().unwrap();
 
-    let date:DateTime=  payload.get("date").and_then(|x|Some(bson::DateTime::parse_rfc3339_str(x.to_string()))).unwrap().unwrap();
-    
+    let date:DateTime=  payload.get("date").and_then(|x|Some(bson::DateTime::from_millis(x.as_i64().unwrap()))).unwrap();
+    println!("Date: {:#?}",date);
 
 
-    let new_item = Item{id:None,item_name,category,quantity,method_measure,unit_price,date};
+    //let new_item = doc! {"item_name":item_name,"category":category,"quantity":quantity,"method_measure":method_measure,"unit_price":unit_price,"date":date};
 
-
+    //println!("Doc of items{:#?}",new_item);
     let client_uri = env::var("MONGODB_URI")
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
 
@@ -304,11 +305,11 @@ async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
     let client = Client::with_options(options)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
 
-    let item: Collection<Item> = client.database("test").collection("item");
+    let item: Collection<Value> = client.database("test").collection("item");
 
     
 
-    let _cursor = item.insert_one(new_item, None);
+    item.insert_one(payload, None).await;
 
 
     return Ok(Json(json!({"Success":true})))

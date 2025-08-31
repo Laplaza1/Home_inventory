@@ -2,7 +2,7 @@
 .items-wrapper {
     
   position: fixed;
-  z-index: 9;
+  z-index: 0;
   background-color: #f1f1f1;
   text-align: center;
   border: 3px solid black;
@@ -15,11 +15,21 @@
     
 }
 
-.items-wrapperheader {
+#items-box{
+    position: absolute;
+    justify-content: space-around;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 10px;
+}
 
+.items-wrapperheader {
+    
+    display: block;
   border:2px solid lightslategray;
   border-radius: 5%;
-  position: absolute;
+  position: relative;
   padding: 10px;
   cursor: move;
   z-index: 0;
@@ -89,7 +99,7 @@ button:hover{
 
 #popup{
     background: linear-gradient(90deg,rgba(172, 191, 191, 1) 0%, rgba(118, 171, 139, 1) 50%, rgba(230, 227, 213, 1) 100%);
-    position: fixed;
+    position: relative;
     display: none;
     z-index: 1;
     justify-content: center;
