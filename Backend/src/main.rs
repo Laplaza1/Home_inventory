@@ -271,7 +271,7 @@ async fn specific_Item(Path(item_id): Path<i64>)->Result<Json<Vec<Item>>,(Status
      let items:Vec<Item> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x))})?;
     
 
-    return Ok(Json(Item))
+    return Ok(Json(items))
 }
 
 
