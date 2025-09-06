@@ -1,6 +1,5 @@
-use bson::{ oid::Error, Array, DateTime, Document,Decimal128};
+use bson::{ oid::Error, DateTime, Document,Decimal128};
 use chrono::{Utc};
-use ::futures::StreamExt;
 use serde_json::{
     Value,
     json
@@ -306,10 +305,7 @@ async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
 
     let item: Collection<Value> = client.database("test").collection("item");
-
-    
-
-    item.insert_one(payload, None).await;
+    let _ = item.insert_one(payload, None).await.map_err(|e|(StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create item from error {}",e)));
 
 
     return Ok(Json(json!({"Success":true})))
