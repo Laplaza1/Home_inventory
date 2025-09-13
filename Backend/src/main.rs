@@ -318,10 +318,11 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
     let item_name: String = payload.get("item_name").and_then(|x|Some(x.to_string())).unwrap();
     let category:Vec<String> = payload.get("category").and_then(|x|Some(x.as_array())).unwrap().unwrap().iter().map(|x|x.to_string()).collect();
     let quantity:  i64 = payload.get("quantity").and_then(|x|Some(x.as_i64())).unwrap().unwrap();
+    let old_quantity:i64 = payload.get("old_quantity").and_then(|x|Some(x.as_i64())).unwrap().unwrap();;
     let method_measure: String = payload.get("method_measure").and_then(|x|Some(x.to_string())).unwrap();
     let unit_price:f32 = payload.get("unit_price").and_then(|x|Some(x.to_string().parse::<f32>().ok())).unwrap().unwrap();
     let date:DateTime=  payload.get("date").and_then(|x|Some(bson::DateTime::parse_rfc3339_str(x.to_string()))).unwrap().unwrap();
-    
+    let token = payload.get("token");
 
     let find_item = doc!{"item_id":item_id};
     let new_item = doc! {"$set":{"item_id":item_id,"item_name":item_name,"category":category,"quantity":quantity,"method_measure":method_measure,"unit_price":unit_price,"date":date}};
@@ -338,7 +339,12 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
     let itemo: Collection<Item> = client.database("test").collection("item");
     let _cursor = itemo.update_one(find_item,new_item,None).await;
-    let change_log :Collection<Change>=client.database("test").collection("change");
+
+    let difference = Some(quantity-old_quantity).unwrap();
+    
+    let change_line = doc! {"item":item_id,"change":difference,"date":date};
+
+    let _ = client.database("test").collection("change").insert_one(change_line, None).await;
 
 
     return Ok(Json(json!({"Success":true})))

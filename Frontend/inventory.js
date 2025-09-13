@@ -16,6 +16,22 @@ function isObject(value){
 document.addEventListener("DOMContentLoaded",()=>
 
     {
+        document.getElementById("slider").addEventListener('click',()=>
+            {
+                if (document.getElementById("slider").checked == true)
+                    {
+                        document.querySelector(".slider.round").innerHTML = "Display"
+                        document.getElementById("hidden-table").style.display = "None"
+                        document.getElementById("items-box").style.display = "flex"
+                    } 
+                else 
+                    {
+                        document.querySelector(".slider.round").textContent = "Table"
+                        document.getElementById("items-box").style.display = "None"
+                        document.getElementById("hidden-table").style.display = "block"
+                    }
+            })
+        
         document.getElementById("submitButton").addEventListener("click",(event)=>{console.log("Submitted")})
         document.getElementById("closeButton").addEventListener("click",(event)=>
         {
@@ -36,11 +52,36 @@ document.addEventListener("DOMContentLoaded",()=>
                         let id = element._id.$oid
                         let category = element.category
                         let method_measure = element.method_measure
-                        let date = Date(element.date.$date.$numberLong)
+                        let date =new Date(Number(element.date.$date.$numberLong))
                         let quantity = element.quantity
                         let unit_price = element.unit_price
 
+
+                        console.log(`${date} -- ${element.date.$date.$numberLong}`)
+
                         //creating elements
+
+
+                        //table display
+                        let table_row = document.createElement("tr")
+
+                        let th_name = document.createElement("th")
+                        th_name.textContent =item_name
+
+                        let th_category = document.createElement("th")
+                        th_category.textContent = category
+
+                        let th_date = document.createElement("th")
+                        th_date.textContent = date
+
+                        let th_quantity = document.createElement("th")
+                        th_quantity.textContent = `${quantity} ${method_measure}`
+
+                        let th_unit_price = document.createElement("th")
+                        th_unit_price.textContent = `$${unit_price.$numberDecimal}`
+
+
+                        //Box display
                         let box =document.createElement("div")
                         box.style.borderColor="Black"
                         box.style.border = "1 px solid black"
@@ -117,7 +158,17 @@ document.addEventListener("DOMContentLoaded",()=>
                         
                         console.log(element)
 
+                        //putting together the table
 
+                        table_row.appendChild(th_name)
+                        table_row.appendChild(th_category)
+                        table_row.appendChild(th_date)
+                        table_row.appendChild(th_quantity)
+                        table_row.appendChild(th_unit_price)
+                        document.getElementById("inventory-table").appendChild(table_row)
+
+
+                        //putting together the box display
                         box.appendChild(iNameElem)
                         box.appendChild(idElem)
                         box.appendChild(categoryElem)
@@ -168,6 +219,7 @@ document.addEventListener("DOMContentLoaded",()=>
                                 document.getElementById("popup").style.left = `${window.scrollX}px`;
 
                             })
+                        
                        //document.querySelectorAll("#items-wrapper").forEach((elem, index)=>{dragElement(elem);elem.style.top =`${index*600+100}px`});
                        
                        Object.keys(element).forEach(key => {
