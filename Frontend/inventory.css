@@ -72,6 +72,10 @@ input:checked + .slider:before {
 .slider.round {
   border-radius: 34px;
   align-content: center;
+  user-select: none; /* Prevents text selection */
+  -webkit-user-select: none; /* For Safari */
+  -moz-user-select: none; /* For Firefox */
+  -ms-user-select: none;
 }
 
 .slider.round:before {
