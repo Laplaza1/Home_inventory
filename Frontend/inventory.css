@@ -167,7 +167,7 @@ button:hover{
 
 #popup{
     background: linear-gradient(90deg,rgba(172, 191, 191, 1) 0%, rgba(118, 171, 139, 1) 50%, rgba(230, 227, 213, 1) 100%);
-    position: relative;
+    position: absolute;
     display: none;
     z-index: 1;
     justify-content: center;
@@ -222,6 +222,10 @@ button {
     color: white;
     border: none;
     cursor: pointer;
+    user-select: none; /* Prevents text selection */
+    -webkit-user-select: none; /* For Safari */
+    -moz-user-select: none; /* For Firefox */
+    -ms-user-select: none;
 }
 button:hover {
     background-color: #0056b3;
@@ -233,5 +237,18 @@ button:hover {
     border: 1px solid #ddd;
 }
 #hidden-table{
+    user-select: none; /* Prevents text selection */
+    -webkit-user-select: none; /* For Safari */
+    -moz-user-select: none; /* For Firefox */
+    -ms-user-select: none;
     display: none;
+}
+#filters{
+        
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    justify-content: space-around;
+    align-content: space-between;
 }

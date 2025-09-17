@@ -1,5 +1,6 @@
 
 document.addEventListener("DOMContentLoaded",()=>{
+    document.getElementById("amountInput").addEventListener("input",(event)=>{if (this.value < 0){this.value = this.value * 0; console.log(this.value)}})
     let time= document.getElementById("timeInput")
     time.value = new Date().getTime()
     const input = document.getElementById('priceInput');

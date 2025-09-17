@@ -36,6 +36,7 @@ document.addEventListener("DOMContentLoaded",()=>
         document.getElementById("closeButton").addEventListener("click",(event)=>
         {
         event.target.parentElement.style.display = "none"
+        document.querySelectorAll("#hidden-table").forEach(elem=>{elem.style.opacity = 1})
         document.querySelectorAll("#items-wrapper").forEach(elem=>{elem.style.opacity = 1});
         document.querySelectorAll("#editButton").forEach(elem=>{elem.disabled =false})
         document.querySelectorAll(".toggle-button.selected").forEach(elem=>{elem.className= "toggle-button"})
@@ -57,6 +58,7 @@ document.addEventListener("DOMContentLoaded",()=>
                         let unit_price = element.unit_price
 
 
+
                         console.log(`${date} -- ${element.date.$date.$numberLong}`)
 
                         //creating elements
@@ -66,19 +68,92 @@ document.addEventListener("DOMContentLoaded",()=>
                         let table_row = document.createElement("tr")
 
                         let th_name = document.createElement("th")
+                        th_name.id = "name"
                         th_name.textContent =item_name
 
                         let th_category = document.createElement("th")
+                        th_category.id = "category"
                         th_category.textContent = category
 
                         let th_date = document.createElement("th")
+                        th_date.id = "date"
                         th_date.textContent = date
 
                         let th_quantity = document.createElement("th")
+                        th_quantity.id = "quantity"
                         th_quantity.textContent = `${quantity} ${method_measure}`
 
                         let th_unit_price = document.createElement("th")
+                        th_unit_price.id = "unit_price"
                         th_unit_price.textContent = `$${unit_price.$numberDecimal}`
+
+
+                        let th_hidden_id = document.createElement("th")
+                        th_hidden_id.id="id"
+                        th_hidden_id.textContent = id
+                        th_hidden_id.style.display = "None"
+
+
+                        // let th_hidden_time=document.createElement("th")
+                        // th_hidden_time.id = "time"
+                        // th_hidden_time.textContent = date
+
+                        let th_edit_button_row = document.createElement("th")
+                        let th_edit_button = document.createElement("button")
+                        th_edit_button.id="editButton"
+                        th_edit_button.textContent="Edit"
+                        th_edit_button.innerHTML="Edit"
+                        th_edit_button.type = "button"
+                        th_edit_button.addEventListener("click",event=>
+                            { 
+
+                                let item = event.target.parentElement.parentElement
+                                
+                                console.log(item.querySelector("#unit_price").textContent.substring(1,(item.querySelector("#unit_price").length)))
+
+                                document.getElementById("popup").style.display = "block"
+                                document.querySelectorAll("#hidden-table").forEach(elem=>{elem.style.opacity = .5})
+                                document.getElementById("idInput").value = item.querySelector('#id').textContent
+                                document.getElementById("idLabel2").innerHTML = item.querySelector('#id').textContent
+                                
+                                //nameElem
+                                document.getElementById("nameInput").value = item.querySelector('#name').textContent
+                                
+                                //categoryElem
+                                document.querySelector(`[data-value=${item.querySelector("#category").textContent}]`).className="toggle-button selected"
+                                
+
+                                //method_measure
+                                
+                                document.getElementById("selectInput").value = item.querySelector("#quantity").innerText.split(" ")[1]
+
+                                //quantityElem
+                                document.getElementById("amountInput").value = item.querySelector("#quantity").textContent.split(" ")[0]
+
+
+                                //unit_priceElem
+                                document.getElementById("priceInput").value = item.querySelector("#unit_price").textContent.substring(1,(item.querySelector("#unit_price").length))
+
+                                //dateElem
+                                document.getElementById("timeInput").value = item.querySelector("#date").textContent
+                                document.querySelectorAll("#editButton").forEach(elem=>{elem.disabled =true})
+                                console.log(`X${scrollX}  Y${(scrollY + Number(50)) }`)
+
+                                document.getElementById("popup").style.top = `${window.scrollY+100}px`;
+                                document.getElementById("popup").style.left = `10%`;
+                            
+                            
+                            })
+                    
+                        th_edit_button_row.appendChild(th_edit_button)
+    
+                        let th_delete_button_row = document.createElement("th")
+                        let th_delete_button = document.createElement("button")
+                        th_delete_button.id="deleteButton"
+                        th_delete_button.textContent="Delete"
+                        th_delete_button.type = "button"
+                        th_delete_button_row.appendChild(th_delete_button) 
+
 
 
                         //Box display
@@ -148,47 +223,23 @@ document.addEventListener("DOMContentLoaded",()=>
 
                         let edit_button = document.createElement("button")
                         edit_button.id="editButton"
-                        edit_button.textContent="Edit"
+                        edit_button.innerHTML="Edit"
                         edit_button.type = "button"
+                        
                         
                         
                         let delete_button = document.createElement("button")
                         delete_button.id = "deleteButton"
-                        delete_button.textContent = "Delete"
+                        delete_button.innerHTML = "Delete"
                         
-                        console.log(element)
 
-                        //putting together the table
-
-                        table_row.appendChild(th_name)
-                        table_row.appendChild(th_category)
-                        table_row.appendChild(th_date)
-                        table_row.appendChild(th_quantity)
-                        table_row.appendChild(th_unit_price)
-                        document.getElementById("inventory-table").appendChild(table_row)
-
-
-                        //putting together the box display
-                        box.appendChild(iNameElem)
-                        box.appendChild(idElem)
-                        box.appendChild(categoryElem)
-                        box.appendChild(measureDiv)
-                        box.appendChild(unit_priceElem)
-                        box.appendChild(dateElem)
-                        buttonSection1.appendChild(edit_button)
-                        buttonSection2.appendChild(delete_button)
-                        box.appendChild(button_div)
-                   
-                        document.getElementById("items-box").appendChild(box)
                         edit_button.addEventListener("click",(event)=>
                             {
-                            
+                                //console.log()
                                 
-                                //fetch(`https://home-inventory-bml1.onrender.com/item/${event.target.parentElement.parentElement.parentElement.querySelector('[id]').textContent}`)
+                                
                                 document.getElementById("popup").style.display = "block"
-                                //event.target.parentElement.parentElement.parentElement.querySelector("#items-wrapper").style.opacity = .5
                                 document.querySelectorAll("#items-wrapper").forEach(elem=>{elem.style.opacity = .5})
-                                //let ids = ["id","nameInput","CategoryInput","selectInput","amountInput","timeInput","submitButton","closeButton"]
                                 document.getElementById("idInput").value = event.target.parentElement.parentElement.parentElement.querySelector('.id').textContent
                                 document.getElementById("idLabel2").innerHTML = event.target.parentElement.parentElement.parentElement.querySelector('.id').textContent
                                 
@@ -196,9 +247,7 @@ document.addEventListener("DOMContentLoaded",()=>
                                 document.getElementById("nameInput").value = event.target.parentElement.parentElement.parentElement.querySelector('#nameElem').textContent
                                 
                                 //categoryElem
-                                //document.querySelector("#categories").querySelectorAll("div").forEach((item)=>{if (console.log(item.dataset.value))})
                                 event.target.parentElement.parentElement.parentElement.querySelector("#categoryElem").textContent.split(",").map((itemo)=>{console.log(itemo);document.querySelector(`[data-value=${itemo}]`).className="toggle-button selected"})
-                                //document.getElementById("CategoryInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#categoryElem").textContent
                                 console.log( event.target.parentElement.parentElement.parentElement.querySelector("#categoryElem").textContent)
 
                                 //method_measure
@@ -214,11 +263,42 @@ document.addEventListener("DOMContentLoaded",()=>
                                 //dateElem
                                 document.getElementById("timeInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#dateElem").textContent
                                 document.querySelectorAll("#editButton").forEach(elem=>{elem.disabled =true})
-                                console.log(`X${scrollX}  Y${scrollY}`)
-                                document.getElementById("popup").style.top = `${window.scrollY}px`;
-                                document.getElementById("popup").style.left = `${window.scrollX}px`;
+                                console.log(`X${scrollX}  Y${scrollY +100}`)
+                                document.getElementById("popup").style.top = `${window.scrollY+100}px`;
+                                document.getElementById("popup").style.left = `10%`;
 
                             })
+
+
+                        console.log(element)
+
+                        //putting together the table
+
+                        table_row.appendChild(th_name)
+                        table_row.appendChild(th_category)
+                        table_row.appendChild(th_date)
+                        table_row.appendChild(th_quantity)
+                        table_row.appendChild(th_unit_price)
+                        table_row.appendChild(th_hidden_id)                        
+                        table_row.appendChild(th_edit_button_row)
+                        table_row.appendChild(th_delete_button_row)
+
+                        document.getElementById("inventory-table").appendChild(table_row)
+
+
+                        //putting together the box display
+                        box.appendChild(iNameElem)
+                        box.appendChild(idElem)
+                        box.appendChild(categoryElem)
+                        box.appendChild(measureDiv)
+                        box.appendChild(unit_priceElem)
+                        box.appendChild(dateElem)
+                        buttonSection1.appendChild(edit_button)
+                        buttonSection2.appendChild(delete_button)
+                        box.appendChild(button_div)
+                   
+                        document.getElementById("items-box").appendChild(box)
+                        
                         
                        //document.querySelectorAll("#items-wrapper").forEach((elem, index)=>{dragElement(elem);elem.style.top =`${index*600+100}px`});
                        
@@ -231,6 +311,16 @@ document.addEventListener("DOMContentLoaded",()=>
         )
        
     }) 
+
+
+
+function edit_form(element)
+    {
+        console.log(element.target.parentElement.parentElement)
+
+
+
+    }
 
 
 
@@ -259,7 +349,7 @@ function dragElement(elmnt) {
   }
 
   function dragMouseDown(e) {
-    e = e || window.event;
+    e = e || window.e;
     e.preventDefault();
     // get the mouse cursor position at startup:
     pos3 = e.clientX;
@@ -270,7 +360,7 @@ function dragElement(elmnt) {
   }
 
   function elementDrag(e) {
-    e = e || window.event;
+    e = e || window.e;
     e.preventDefault();
     // calculate the new cursor position:
     pos1 = pos3 - e.clientX;
@@ -284,7 +374,6 @@ function dragElement(elmnt) {
   }
 
   function closeDragElement() {
-    /* stop moving when mouse button is released:*/
     document.onmouseup = null;
     document.onmousemove = null;
   }
