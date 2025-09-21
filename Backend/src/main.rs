@@ -11,14 +11,11 @@ use axum::{
     extract::{ws::{WebSocket, WebSocketUpgrade}, Path, Request},
     http::{HeaderMap, Method, StatusCode,header::COOKIE}, response::{IntoResponse, Json}, routing::{delete, get, post, put}, Router
 };
+use core::f32;
 use std::env;
 
 use mongodb::{
-    bson::doc,
-    options::{ClientOptions,ResolverConfig},
-    Client, Collection,
-    bson::oid::ObjectId,
-    bson::Bson
+    bson::{doc, oid::ObjectId, Bson}, options::{ClientOptions,ResolverConfig}, results::UpdateResult, Client, Collection
 };
 use serde::{Serialize, Deserialize};
 
@@ -91,7 +88,7 @@ async fn main() {
     .route("/item",post(insert_item))
     .route("/item",get(get_item))
     .route("/specificItem/{item_id}",get(specific_Item))
-    .route("/item/{item_id}",put(change_item))
+    .route("/item",put(change_item))
     .route("/item/{item_id}",delete(delete_item))
     .layer(cors);
 
@@ -314,18 +311,54 @@ async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
 async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
 
-    let item_id: i64=payload.get("item_id").and_then(|x|Some(x.as_i64().unwrap())).unwrap();
-    let item_name: String = payload.get("item_name").and_then(|x|Some(x.to_string())).unwrap();
-    let category:Vec<String> = payload.get("category").and_then(|x|Some(x.as_array())).unwrap().unwrap().iter().map(|x|x.to_string()).collect();
-    let quantity:  i64 = payload.get("quantity").and_then(|x|Some(x.as_i64())).unwrap().unwrap();
-    let old_quantity:i64 = payload.get("old_quantity").and_then(|x|Some(x.as_i64())).unwrap().unwrap();;
-    let method_measure: String = payload.get("method_measure").and_then(|x|Some(x.to_string())).unwrap();
-    let unit_price:f32 = payload.get("unit_price").and_then(|x|Some(x.to_string().parse::<f32>().ok())).unwrap().unwrap();
-    let date:DateTime=  payload.get("date").and_then(|x|Some(bson::DateTime::parse_rfc3339_str(x.to_string()))).unwrap().unwrap();
-    let token = payload.get("token");
+    
+    //println!("{:#?}",payload.get("time"));
+    
+    let item_id: String=match payload.get("id") {
+        Some(Value::String(x))=>{x.to_string()},
+        _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))} 
+    };
+    let item_name: String = match payload.get("name")
+        {
+            Some(Value::String(x))=>{x.to_string()},
+            _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
 
-    let find_item = doc!{"item_id":item_id};
-    let new_item = doc! {"$set":{"item_id":item_id,"item_name":item_name,"category":category,"quantity":quantity,"method_measure":method_measure,"unit_price":unit_price,"date":date}};
+        };
+    //.and_then(|x|Some(x.to_string())).unwrap();
+    let category:Vec<String> = match payload.get("categories") {
+        Some(Value::String(s))=>{vec![s.to_string()]},
+        Some(Value::Array(s))=>{let arrayer:Vec<String>= s.iter().map(|x|x.to_string()).collect(); arrayer},
+        _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}      
+    };
+    
+    let quantity:  i64 = payload.get("amount").and_then(|x|Some(x.as_i64())).unwrap().unwrap();
+    let old_quantity:i64 = payload.get("oldAmount").and_then(|x|Some(x.as_i64())).unwrap().unwrap();;
+    let method_measure: String = match payload.get("method of measure")
+        {
+            Some(Value::String(x))=>{x.to_string()}
+            _ =>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+
+        };
+    let unit_price:Decimal128 =match payload.get("price")
+        {
+            Some(x)=>{x.to_string().parse::<Decimal128>().expect("This f32 cast shouldn't mess up but if it does its users fault")},
+            _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+        
+        };
+    println!("Method of measure: {:#?}",method_measure);
+        //.and_then(|x|Some(x.to_string().parse::<f32>().ok())).unwrap().unwrap();
+    let date:DateTime=  match payload.get("time") {
+        Some(Value::Number(x))=>{match x.as_i64() {
+         Some(x)=>{bson::DateTime::from_millis(x)},
+         _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}   
+        }}
+        _ =>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+    };
+    println!("{:#?}",item_id);
+    let token = payload.get("token");
+    let object_id = ObjectId::parse_str(item_id.as_str()).map_err(|x|(StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", x))).ok();
+    let find_item = doc!{"_id":object_id};
+    let new_item = doc! {"$set":{"_id":object_id,"item_name":item_name,"category":category,"quantity":quantity,"method_measure":method_measure,"unit_price":unit_price,"date":date}};
 
 
     let client_uri = env::var("MONGODB_URI")
@@ -337,12 +370,17 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
     let client = Client::with_options(options)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
 
+    println!("Prior to Collection call");    
     let itemo: Collection<Item> = client.database("test").collection("item");
-    let _cursor = itemo.update_one(find_item,new_item,None).await;
+    println!("After Collection call");
+
+    let _cursor = itemo.update_one(find_item,new_item,None).await.ok();
+
+   
 
     let difference = Some(quantity-old_quantity).unwrap();
     
-    let change_line = doc! {"item":item_id,"change":difference,"date":date};
+    let change_line = doc! {"item":item_id.clone(),"change":difference,"date":date};
 
     let _ = client.database("test").collection("change").insert_one(change_line, None).await;
 

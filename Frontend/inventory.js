@@ -16,6 +16,45 @@ function isObject(value){
 document.addEventListener("DOMContentLoaded",()=>
 
     {
+        //sumbit button
+        // document.getElementById("popup").addEventListener("submit",(event)=>
+        //     {
+        //         console.log("form data")
+        //         let formdata = new FormData(event.target)
+        //         console.log(formdata)
+        //     })
+
+        // document.querySelector('form').addEventListener('submit', async (e) => 
+        //     {
+        //         e.preventDefault();
+        //         const formData = new FormData(e.target);
+        //         console.log(formData)
+        //         console.log(e.target)
+        //     })
+
+        //Amount Input
+        document.getElementById("amountInput").addEventListener('input',(event)=>
+            {
+                console.log(event.target.value)
+                if (event.target.value <0)
+                    {
+                        event.target.value = event.target.value * -1 ;
+                    }
+
+            })
+
+        //price Input
+        document.getElementById("priceInput").addEventListener('input',(event)=>
+            {
+                console.log(event.target.value)
+                if (event.target.value <0)
+                    {
+                        event.target.value = event.target.value * -1 ;
+                    }
+
+            })
+        
+        //display Slider    
         document.getElementById("slider").addEventListener('click',()=>
             {
                 if (document.getElementById("slider").checked == true)
@@ -32,7 +71,37 @@ document.addEventListener("DOMContentLoaded",()=>
                     }
             })
         
-        document.getElementById("submitButton").addEventListener("click",(event)=>{console.log("Submitted")})
+        document.getElementById("submitButton").addEventListener("click",(event)=>
+            {
+            
+                const form = document.getElementById('popup');
+                const formData = new FormData(form);
+                console.log("Categories func",getSelectedCategories())
+                formData.append("categories",[getSelectedCategories()])
+                const formObject = {};
+
+                // Convert FormData to a plain object for logging
+                formData.forEach((value, key) => {
+                    
+                    formObject[key] = value;
+                    if (key == "time")
+                        {
+                            let dato = new Date(value.toString())
+                            console.log(dato.getTime())
+                            formObject["time"] = dato.getTime()
+                            formData.set("time",dato.getTime())
+                        }
+                });
+                
+                fetch(`https://home-inventory-bml1.onrender.com/item`, 
+                    {
+                        method:"PUT",
+                        body: formData
+                    })
+                // Log to console
+                console.log('Form Data:', formObject);
+        
+            })
         document.getElementById("closeButton").addEventListener("click",(event)=>
         {
         event.target.parentElement.style.display = "none"
@@ -255,7 +324,9 @@ document.addEventListener("DOMContentLoaded",()=>
 
                                 //quantityElem
                                 document.getElementById("amountInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#quantityElem").textContent
-
+                                document.getElementById("oldAmount").value = event.target.parentElement.parentElement.parentElement.querySelector("#quantityElem").textContent
+                                
+                                
 
                                 //unit_priceElem
                                 document.getElementById("priceInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#unit_priceElem").textContent.substring(1,event.target.parentElement.parentElement.parentElement.querySelector("#unit_priceElem").textContent.length)
@@ -333,7 +404,8 @@ function getSelectedCategories()
     {
         const buttons = document.querySelectorAll('.toggle-button.selected');
         const selectedOptions = Array.from(buttons).map(button => button.getAttribute('data-value'));
-        console.log(selectedOptions);
+        console.log(typeof selectedOptions)
+        return selectedOptions
     }
 
 
