@@ -89,7 +89,7 @@ async fn main() {
     .route("/item",get(get_item))
     .route("/specificItem/{item_id}",get(specific_Item))
     .route("/item",put(change_item))
-    .route("/item/{item_id}",delete(delete_item))
+    .route("/item",delete(delete_item))
     .layer(cors);
 
      let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
