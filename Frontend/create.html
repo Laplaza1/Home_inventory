@@ -16,11 +16,11 @@
     </nav>
     <h1 id="create_title">Create Inventory</h1>
     <div id="items-form-box">
-        <form id="item_form">
+        <form id="item_form" method="dialog" target="_blank">
             <label>Name</label>
-            <input id="nameInput" type="text"  value=""><br>
+            <input id="nameInput" name="name" type="text" value=""><br>
             <label>Method of measure</label>
-            <select id="selectInput">
+            <select name="method of measure" id="selectInput">
                 <option>Select</option>
                 <option>Gallon</option>
                 <option>Oz</option>
@@ -31,21 +31,25 @@
                 <option>L</option>
             </select><br>
             <label>Amount</label>
-            <input id="amountInput" type="number" value="" min="0" onkeyup="if(this.value<0){this.value= this.value * 0}" placeholder="Put Amount here"><br>
+            <input id="amountInput" name="amount" type="number" value="" placeholder="Put Amount here"><br>
             <label>Price</label>
-            <input id="priceInput" min="0.00" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" value="" placeholder="Put Price here"><br>
+            <input id="priceInput" name="price" type="number"  step="0.01" value="" min="0.00" placeholder="Put Price here"><br>
             <label for="categories">categories:</label>
-            <div id="categories" class="categories">
+            <div id="categories" name="categories" class="categories">
                 <div class="toggle-button" data-value="Meat" onclick="toggleSelection(this)">Meat</div>
-                <div class="toggle-button" data-value="Spices" onclick="toggleSelection(this)">Spices</div>
-                <div class="toggle-button" data-value="Vegetables" onclick="toggleSelection(this)">Vegetables</div>
-                <div class="toggle-button" data-value="Fruits" onclick="toggleSelection(this)">Fruits</div>
+                <div class="toggle-button" data-value="Spice" onclick="toggleSelection(this)">Spice</div>
+                <div class="toggle-button" data-value="Vegetable" onclick="toggleSelection(this)">Vegetable</div>
+                <div class="toggle-button" data-value="Fruit" onclick="toggleSelection(this)">Fruit</div>
                 <div class="toggle-button" data-value="Dairy" onclick="toggleSelection(this)">Dairy</div>
                 <div class="toggle-button" data-value="Cleaning" onclick="toggleSelection(this)">Cleaning</div>
                 <div class="toggle-button" data-value="Animal" onclick="toggleSelection(this)">Animal</div>
             </div>
-            <input type="hidden" id="timeInput" value=""><br>
-            <button id="submitButton" type="button" onclick=getSelectedCategories()>Submit</button>
+            <input type="hidden" name="time" id="timeInput" value=""><br>
+            <button id="submitButton" type="submit" onclick=getSelectedCategories()>Submit</button>
+            <button id="closeButton" type="button">Close</button>
+
+
+        </form>
 
         </form>
 

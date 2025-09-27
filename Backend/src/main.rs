@@ -275,22 +275,56 @@ async fn specific_Item()->Result<Json<Vec<Item>>,(StatusCode,String)>{
 async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
     
     println!("payload: {:#?}",payload);
-    let item_name: Value = payload.get("item_name").unwrap().clone();
-        if item_name.is_string() {println!("{:#?}",item_name)}
+    
+    let item_name: String = match payload.get("name")
+        {
+            Some(Value::String(x))=>{x.to_string()},
+            _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
 
-    let category:Vec<String> = payload.get("category").and_then(|x|Some(x.as_array())).unwrap().unwrap().iter().map(|x|x.to_string()).collect();
-    let quantity:  i64 = payload.get("quantity").and_then(|x|Some(x.as_i64())).unwrap().unwrap();
+        };
+    //.and_then(|x|Some(x.to_string())).unwrap();
+    let category:Vec<String> = match payload.get("categories") {
+        Some(Value::String(s))=>{vec![s.to_string()]},
+        Some(Value::Array(s))=>{let arrayer:Vec<String>= s.iter().map(|x|x.to_string()).collect(); arrayer},
+        _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}      
+    };
+    
+    let quantity:  i64 = match payload.get("amount")
+        {
+            Some(Value::String(x))=>{x.parse::<i64>().expect("This shouldn't be wrong if posted through")},
+            Some(Value::Number(x))=>{x.as_i64().expect("Should be right")}
+            _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
 
-    let method_measure: String = payload.get("method_measure").and_then(|x|Some(x.to_string())).unwrap();
+        };
+    
+    //.and_then(|x|Some(x.as_i64())).unwrap().unwrap();
+    
+    //.and_then(|x|Some(x.as_i64())).unwrap().unwrap();;
+    let method_measure: String = match payload.get("method of measure")
+        {
+            Some(Value::String(x))=>{x.to_string()}
+            _ =>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
 
-    let unit_price:Decimal128 = payload.get("unit_price").and_then(|x|Some(x.to_string().parse::<Decimal128>().ok())).unwrap().unwrap();
+        };
+    let unit_price:Decimal128 =match payload.get("price")
+        {
+            Some(Value::String(x))=>{x.parse::<Decimal128>().expect("This Decimal cast from String shouldn't mess up but if it does its users fault")},
+            Some(Value::Number(x))=>{x.to_string().parse::<Decimal128>().expect("This Decimal cast from Number shouldn't mess up but if it does its users fault")},
+            _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+        
+        };
+    //println!("Method of measure: {:#?}",method_measure);
+        //.and_then(|x|Some(x.to_string().parse::<f32>().ok())).unwrap().unwrap();
+    let date:DateTime=  match payload.get("time") {
+        Some(Value::Number(x))=>{match x.as_i64() {
+         Some(x)=>{bson::DateTime::from_millis(x)},
+         _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}   
+        }}
+        _ =>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+    };
 
-    let date:DateTime=  payload.get("date").and_then(|x|Some(bson::DateTime::from_millis(x.as_i64().unwrap()))).unwrap();
-    println!("Date: {:#?}",date);
-
-
-    //let new_item = doc! {"item_name":item_name,"category":category,"quantity":quantity,"method_measure":method_measure,"unit_price":unit_price,"date":date};
-
+    let newo_item :Document= doc! {"item_name":item_name,"category":category,"quantity":quantity,"method_measure":method_measure,"unit_price":unit_price,"date":date};
+    println!("{:#?}",newo_item);
     //println!("Doc of items{:#?}",new_item);
     let client_uri = env::var("MONGODB_URI")
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
@@ -301,9 +335,15 @@ async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
     let client = Client::with_options(options)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
 
-    let item: Collection<Value> = client.database("test").collection("item");
-    let _ = item.insert_one(payload, None).await.map_err(|e|(StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create item from error {}",e)));
 
+    let document = doc! {
+        "name": "Alice",
+        "age": 30,
+        "email": "alice@example.com"
+    };
+    let item: Collection<Document> = client.database("test").collection("item");
+    item.insert_one(newo_item , None).await.ok();
+    //let x = item.insert_one(document, options).await.ok();
 
     return Ok(Json(json!({"Success":true})))
 
@@ -312,7 +352,7 @@ async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
 
     
-    //println!("{:#?}",payload.get("time"));
+    println!("{:#?}",payload);
     
     let item_id: String=match payload.get("id") {
         Some(Value::String(x))=>{x.to_string()},
@@ -331,8 +371,23 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
         _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}      
     };
     
-    let quantity:  i64 = payload.get("amount").and_then(|x|Some(x.as_i64())).unwrap().unwrap();
-    let old_quantity:i64 = payload.get("oldAmount").and_then(|x|Some(x.as_i64())).unwrap().unwrap();;
+    let quantity:  i64 = match payload.get("amount")
+        {
+            Some(Value::String(x))=>{x.parse::<i64>().expect("This shouldn't be wrong if posted through")},
+            Some(Value::Number(x))=>{x.as_i64().expect("Should be right")}
+            _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+
+        };
+    
+    //.and_then(|x|Some(x.as_i64())).unwrap().unwrap();
+    let old_quantity:i64 = match payload.get("oldAmount") 
+        {
+           Some(Value::String(x))=>{x.parse::<i64>().expect("This shouldn't be wrong if posted through")},
+           Some(Value::Number(x))=>{x.as_i64().expect("Should be right")}
+           _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+        };
+    
+    //.and_then(|x|Some(x.as_i64())).unwrap().unwrap();;
     let method_measure: String = match payload.get("method of measure")
         {
             Some(Value::String(x))=>{x.to_string()}
@@ -341,7 +396,8 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
         };
     let unit_price:Decimal128 =match payload.get("price")
         {
-            Some(x)=>{x.to_string().parse::<Decimal128>().expect("This f32 cast shouldn't mess up but if it does its users fault")},
+            Some(Value::String(x))=>{x.parse::<Decimal128>().expect("This Decimal cast from String shouldn't mess up but if it does its users fault")},
+            Some(Value::Number(x))=>{x.to_string().parse::<Decimal128>().expect("This Decimal cast from Number shouldn't mess up but if it does its users fault")},
             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
         
         };
@@ -380,7 +436,7 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
     let difference = Some(quantity-old_quantity).unwrap();
     
-    let change_line = doc! {"item":item_id.clone(),"change":difference,"date":date};
+    let change_line = doc! {"item":item_id.clone(),"change":difference,"price":unit_price,"date":date};
 
     let _ = client.database("test").collection("change").insert_one(change_line, None).await;
 
@@ -391,8 +447,15 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
 async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
 
-    let item_id: i64=payload.get("_id").and_then(|x|Some(x.as_i64().unwrap())).unwrap();
-    let filtered_document = doc! {"_id":item_id};
+    let item_id: String= match payload.get("id")
+        {
+            Some(Value::String(x))=>{x.to_string()},
+            _ =>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+
+        };
+    
+    let object_id = ObjectId::parse_str(item_id.as_str()).map_err(|x|(StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", x))).ok();
+    let filtered_document = doc! {"_id":object_id};
 
     let client_uri = env::var("MONGODB_URI")
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
@@ -407,8 +470,8 @@ async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
     
 
-    let _cursor = item.delete_one(filtered_document, None);
-
+    let _cursor = item.delete_one(filtered_document, None).await;
+    println!("Fulfilled functions");
     return Ok(Json(json!({"Success":true})))
 
 

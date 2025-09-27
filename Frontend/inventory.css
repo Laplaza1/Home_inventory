@@ -1,3 +1,11 @@
+div,h1,p,ul,a {
+    user-select: none; /* Prevents text selection */
+    -webkit-user-select: none; /* For Safari */
+    -moz-user-select: none; /* For Firefox */
+    -ms-user-select: none;
+}
+
+
 
 .items-wrapper {
     
@@ -83,7 +91,8 @@ input:checked + .slider:before {
 }
 
 #items-box{
-    margin-left: -10%;
+
+    margin-left: -25%;
     position: absolute;
     justify-content: space-around;
     display: flex;
@@ -251,4 +260,35 @@ button:hover {
     align-items: flex-end;
     justify-content: space-around;
     align-content: space-between;
+}
+#section1Div{
+    width: auto;
+}
+#section2Div{
+    width: auto;
+}
+#dateElem{
+    display: none;
+}
+@media only screen and (max-width: 768px) {
+  /* Styles for screens 768px wide or smaller */
+  #filters{
+    flex-wrap: wrap;
+  }
+  #filterSection{
+        width: 50%;
+        flex-wrap: wrap;
+        padding: 9px;
+    }
+  #items-box{
+    margin-left: 0%;
+  }
+  table{
+    font-size: 11px ;
+
+  }
+  button{
+    padding: 5%;
+  }
+
 }

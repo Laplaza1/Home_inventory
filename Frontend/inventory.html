@@ -15,10 +15,10 @@
     </nav>
     <h1>Inventory</h1>
     <div id="filters">
-        <section>
+        <section id="filterSection">
             <label id="tags">
                 <span>Tags</span>
-                <select>
+                <select id="tagInput">
                     <option>Select</option>
                     <option>Meat</option>
                     <option>Spice</option>
@@ -30,13 +30,13 @@
                 </select>
             </label>
         </section>
-        <section>
+        <section id="filterSection">
             <Label id="search">
                 <span>Search</span>
-                <input placeholder="put text here" type="text">
+                <input id="searchInput" placeholder="put name here" type="text">
             </Label>
         </section>
-        <section>
+        <section id="filterSection">
             <label class="switch">
                 <input id="slider" type="checkbox" checked>
                 <span class="slider round">Display</span>
