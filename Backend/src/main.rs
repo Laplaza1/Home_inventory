@@ -12,7 +12,7 @@ use axum::{
     http::{HeaderMap, Method, StatusCode,header::COOKIE}, response::{IntoResponse, Json}, routing::{delete, get, post, put}, Router
 };
 use core::f32;
-use std::env;
+use std::{env, future::IntoFuture};
 
 use mongodb::{
     bson::{doc, oid::ObjectId, Bson}, options::{ClientOptions,ResolverConfig}, results::UpdateResult, Client, Collection
@@ -90,6 +90,11 @@ async fn main() {
     .route("/specificItem/{item_id}",get(specific_Item))
     .route("/item",put(change_item))
     .route("/item",delete(delete_item))
+
+
+    //get changed data
+    .route("/data",get(pull_data))
+
     .layer(cors);
 
      let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -477,7 +482,22 @@ async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
 }
 
+async fn pull_data()->Result<Json<Vec<Document>>,(StatusCode,String)>{
 
+    let data:Collection<Document> = match handle_client().await {
+        Ok(c) => { c.database("test").collection("change")},
+        Err(_) => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+    };
+     let curser = data
+        .find(None,None)
+        .await
+        .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
+
+
+    let items:Vec<Document> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x))})?;
+    return Ok(Json(items))
+
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -485,6 +505,16 @@ async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
 //Fun functions
 
+async fn handle_client()->Result<Client,Error>{
+    let client_uri = env::var("MONGODB_URI")
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string())).expect("Error on Client URI");
 
+    let options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse client options: {}", e))).expect("Error on Client options");
+    let client = Client::with_options(options)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e))).expect("Error on client result");
+    return Ok(client)
+}
 
 

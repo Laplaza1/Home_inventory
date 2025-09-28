@@ -212,7 +212,7 @@ document.addEventListener("DOMContentLoaded",()=>
                         }}
                 });
                 
-                let  response = fetch(`http://localhost:3000/item`, 
+                let  response = fetch(`https://home-inventory-bml1.onrender.com/item`, 
                     {
                         method:"PUT",
                         headers: 
@@ -224,6 +224,7 @@ document.addEventListener("DOMContentLoaded",()=>
         
                 // Log to console
                 console.log('Form Data:', JSON.stringify(formObject));
+                location.reload()
         
             })
         document.getElementById("closeButton").addEventListener("click",(event)=>
@@ -465,7 +466,8 @@ document.addEventListener("DOMContentLoaded",()=>
                                 //quantityElem
                                 document.getElementById("amountInput").value = event.target.parentElement.parentElement.parentElement.querySelector("#quantityElem").textContent
                                 document.getElementById("oldAmount").value = event.target.parentElement.parentElement.parentElement.querySelector("#quantityElem").textContent
-                                
+                                document.getElementById("timeInput").value = "w"
+                                console.log(event.target.parentElement.parentElement.parentElement.querySelector("#dateElem").textContent)
                                 
 
                                 //unit_priceElem
@@ -529,21 +531,29 @@ document.addEventListener("DOMContentLoaded",()=>
                                         
                                         let x = e.target.parentElement.parentElement.querySelector("#id").textContent
                                         console.log(x)
-                                        fetch("http://localhost:3000/item/1",{method:"Delete",headers: 
+                                        fetch("https://home-inventory-bml1.onrender.com/item",{method:"Delete",headers: 
                             {
                                 "Content-Type": "application/json"
-                            },body:JSON.stringify({"id":x})})
-                                    }
+                            },body:JSON.stringify({"id":x})}).then(()=>
+                                    {
+                                        location.reload()
+                                    })
+                                }
                                 else
                                     {
                                         
                                         let x = e.target.parentElement.parentElement.parentElement.querySelector("#id").textContent
                                         console.log(x)
-                                        fetch("http://localhost:3000/item/1",{method:"Delete",headers: 
+                                        fetch("https://home-inventory-bml1.onrender.com/item",{method:"Delete",headers: 
                             {
                                 "Content-Type": "application/json"
-                            },body:JSON.stringify({"id":x})})
-                                    }
+                            },body:JSON.stringify({"id":x})}).then(()=>
+                                    {
+                                        location.reload()
+                                    })
+                                    
+                                }
+                                    
                             })
                     })
             }

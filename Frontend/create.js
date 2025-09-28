@@ -1,7 +1,15 @@
 
 document.addEventListener("DOMContentLoaded",()=>
     {
+        document.getElementById("priceInput").addEventListener('input',(event)=>
+            {
+                console.log(event.target.value)
+                if (event.target.value <0)
+                    {
+                        event.target.value = event.target.value * -1 ;
+                    }
 
+            })
         if (document.getElementById("selectInput").value == "Select"|document.getElementById("nameInput").value == ""|document.getElementById("amountInput").value== ""|document.getElementById("priceInput").value==""|getSelectedCategories()==false)
             {
 
@@ -72,7 +80,7 @@ document.addEventListener("DOMContentLoaded",()=>
                 formObject["time"] = Number(new Date())
                 console.log(Number(new Date()))
                 console.log(formObject)
-                let  response = fetch(`http://localhost:3000/item`, 
+                let  response = fetch(`https://home-inventory-bml1.onrender.com/item`, 
                     {
                         method:"POST",
                         headers: 
@@ -80,8 +88,19 @@ document.addEventListener("DOMContentLoaded",()=>
                                 "Content-Type": "application/json"
                             },
                         body: JSON.stringify(formObject)
-                    }).then((req,res)=>{console.log(req)})
-            
+                    }).then((req,res)=>
+                        {
+                            if (req.status!=200)
+                                {
+                                    console.log(req.status)
+                                }
+                        
+                            else
+                                {
+                                    location.reload()
+
+                                }
+                        })
             })
                 
         
