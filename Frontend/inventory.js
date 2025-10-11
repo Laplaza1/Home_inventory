@@ -1,3 +1,11 @@
+function setCookie(name, value, daysToExpire) {
+    const date = new Date();
+    date.setTime(date.getTime() + (daysToExpire * 24 * 60 * 60 * 1000)); // Convert days to milliseconds
+    const expires = "expires=" + date.toUTCString();
+    document.cookie = `${name}=${value}; ${expires}; path=/`;
+}
+
+
 
 function isObject(value){
 
@@ -295,10 +303,25 @@ document.addEventListener("DOMContentLoaded",()=>
                         th_hidden_id.textContent = id
                         th_hidden_id.style.display = "None"
 
+                        
 
                         // let th_hidden_time=document.createElement("th")
                         // th_hidden_time.id = "time"
                         // th_hidden_time.textContent = date
+                        let th_graph_button_row = document.createElement('th')
+                        let th_graph_button =document.createElement("button")
+                        th_graph_button.id = "graphbutton"
+                        th_graph_button.textContent = "Graph"
+                        th_graph_button.type = "button"
+                        th_graph_button_row.appendChild(th_graph_button)
+                        th_graph_button.addEventListener("click",(event)=>
+                            {
+                                let id = (event.target.parentElement.parentElement.querySelector("#id").textContent)
+                                localStorage.setItem("item",id)
+                                setCookie("item",id,1)
+                            })
+
+
 
                         let th_edit_button_row = document.createElement("th")
                         let th_edit_button = document.createElement("button")
@@ -494,8 +517,10 @@ document.addEventListener("DOMContentLoaded",()=>
                         table_row.appendChild(th_quantity)
                         table_row.appendChild(th_unit_price)
                         table_row.appendChild(th_hidden_id)                        
+                        table_row.appendChild(th_graph_button_row)
                         table_row.appendChild(th_edit_button_row)
                         table_row.appendChild(th_delete_button_row)
+                        
 
                         document.getElementById("inventory-table").appendChild(table_row)
 

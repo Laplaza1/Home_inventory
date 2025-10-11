@@ -36,7 +36,6 @@ struct Change{
     new_quantity:i64
 }
 
-
 #[derive(Debug, Serialize, Deserialize,Clone)]
 struct User{
     user_name:String,
@@ -501,12 +500,14 @@ async fn pull_data()->Result<Json<Vec<Document>>,(StatusCode,String)>{
 async fn pull_specific_data(Path(id): Path<String>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
     
     let object_id = ObjectId::parse_str(id.as_str()).map_err(|x|(StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", x))).ok();
-    let find_item = doc!{"_id":object_id};
-    
+    let find_item = doc!{"item":id};
+    println!("Object{:#?}",find_item);
     let data:Collection<Document> = match handle_client().await {
         Ok(c) => { c.database("test").collection("change")},
         Err(_) => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
     };
+
+    println!("Document {:#?}",data);
      let curser = data
         .find(find_item,None)
         .await
@@ -514,6 +515,8 @@ async fn pull_specific_data(Path(id): Path<String>)->Result<Json<Vec<Document>>,
 
 
     let items:Vec<Document> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x))})?;
+    println!("Items {:#?}",items);
+    
     return Ok(Json(items))
 
 }

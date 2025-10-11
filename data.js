@@ -32,19 +32,19 @@ function daysInMonth(month, year) {
 
 
 
-
+let itemers = new Set()
 
 let array
 
 document.addEventListener("DOMContentLoaded",()=>
     {
-        fetch("https://home-inventory-bml1.onrender.com/data").then((Response)=>Response.json()).then(data => 
+        cookieStore.get("item").then((itemo)=>{console.log(itemo.value)
+        fetch(`https://home-inventory-bml1.onrender.com/graph/${itemo.value}`).then((Response)=>Response.json()).then(data => 
             {
-                console.log(data
-
-                )
+                console.log()
                 data.forEach(element => 
                     {
+                        itemers.add(element.item)   
                         if (element.item == "68a868023e401df96157c980")
                             {
                                 xvalue.push(element.change);
@@ -52,8 +52,18 @@ document.addEventListener("DOMContentLoaded",()=>
                                 array = Array.from({ length: daysInMonth(z.getMonth()) }, (_, i) => i + 1);
                                 console.log(array)
                                 yvalue.push(z); 
+                            
                             }
+
+                            
                         })
+                    itemers.forEach((e)=>
+                        {
+                            let option = document.createElement("option");
+                            option.textContent= e;
+                            document.getElementById("test").appendChild(option);
+                        })
+                    console.log(itemers)    
                     console.log("XValue:"+xvalue + "\n")
                     console.log("YValue:"+yvalue + "\n")}).then(()=>
                         {
@@ -78,4 +88,4 @@ document.addEventListener("DOMContentLoaded",()=>
         };})
 
 
-    });
+    });})
