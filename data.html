@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0"></script>
+<script src="data.js"></script>
+<body>
+    <button id="updateButton">Update button</button>
+<canvas id="myChart" style="width:100%;"></canvas>
+
+<script>
+    let myChart;
+const xValues = [100,200,300,400,500,600,700,800,900,1000];
+
+let red = [860,1140,1060,1060,1070,1110,1330,2210,7830,2478]
+let green = [1600,1700,1700,1900,2000,2700,4000,5000,6000,7000]
+let blue = [300,700,2000,5000,6000,4000,2000,1000,200,100]
+
+
+const ctx = document.getElementById('myChart');
+
+myChart = new Chart(ctx, {
+  type: "line",
+  data: {
+    labels: xValues,
+    datasets: [{ 
+      label: 'Red',
+      data: [860,1140,1060,1060,1070,1110,1330,2210,7830,2478],
+      borderColor: "red",
+      pointRadius: 2,
+      tension: 0.4,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      title: {
+        display: true,
+        text: 'Chart.js Line Chart',
+        font: {
+          size: 11
+        }
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false
+      }
+    },
+    interaction: {
+      mode: 'nearest',
+      intersect: false
+    },
+    scales: {
+      x: {
+        display: true,
+        title: {
+          display: true,
+          text: 'X-Axis'
+        }
+      },
+      y: {
+        display: true,
+        title: {
+          display: true,
+          text: 'Y-Axis'
+        }
+      }
+    }
+  }
+});
+
+</script>
+
+</body>
+</html>

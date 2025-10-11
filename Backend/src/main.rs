@@ -94,6 +94,7 @@ async fn main() {
 
     //get changed data
     .route("/data",get(pull_data))
+    .route("/graph/{id}",get(pull_specific_data))
 
     .layer(cors);
 
@@ -341,11 +342,7 @@ async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
 
 
-    let document = doc! {
-        "name": "Alice",
-        "age": 30,
-        "email": "alice@example.com"
-    };
+
     let item: Collection<Document> = client.database("test").collection("item");
     item.insert_one(newo_item , None).await.ok();
     //let x = item.insert_one(document, options).await.ok();
@@ -498,6 +495,31 @@ async fn pull_data()->Result<Json<Vec<Document>>,(StatusCode,String)>{
     return Ok(Json(items))
 
 }
+
+
+
+async fn pull_specific_data(Path(id): Path<String>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+    
+    let object_id = ObjectId::parse_str(id.as_str()).map_err(|x|(StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", x))).ok();
+    let find_item = doc!{"_id":object_id};
+    
+    let data:Collection<Document> = match handle_client().await {
+        Ok(c) => { c.database("test").collection("change")},
+        Err(_) => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+    };
+     let curser = data
+        .find(find_item,None)
+        .await
+        .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
+
+
+    let items:Vec<Document> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x))})?;
+    return Ok(Json(items))
+
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
