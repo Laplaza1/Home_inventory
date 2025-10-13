@@ -319,6 +319,7 @@ document.addEventListener("DOMContentLoaded",()=>
                                 let id = (event.target.parentElement.parentElement.querySelector("#id").textContent)
                                 localStorage.setItem("item",id)
                                 setCookie("item",id,1)
+                                window.location.replace("./data.html")
                             })
 
 
@@ -379,7 +380,7 @@ document.addEventListener("DOMContentLoaded",()=>
                         th_delete_button.textContent="Delete"
                         th_delete_button.type = "button"
                         th_delete_button_row.appendChild(th_delete_button) 
-
+                        
                         
 
                         //Box display

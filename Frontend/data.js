@@ -45,24 +45,18 @@ document.addEventListener("DOMContentLoaded",()=>
                 data.forEach(element => 
                     {
                         itemers.add(element.item)   
-                        if (element.item == "68a868023e401df96157c980")
-                            {
-                                xvalue.push(element.change);
-                                let z = new Date(Number(element.date.$date.$numberLong))
-                                array = Array.from({ length: daysInMonth(z.getMonth()) }, (_, i) => i + 1);
-                                console.log(array)
-                                yvalue.push(z); 
-                            
-                            }
+                       
+                        xvalue.push(element.change);
+                        let z = new Date(Number(element.date.$date.$numberLong))
+                        array = Array.from({ length: daysInMonth(z.getMonth()) }, (_, i) => i + 1);
+                        console.log(array)
+                        yvalue.push(z); 
 
+                        })
+                    // itemers.forEach((e)=>
+                    //     {
                             
-                        })
-                    itemers.forEach((e)=>
-                        {
-                            let option = document.createElement("option");
-                            option.textContent= e;
-                            document.getElementById("test").appendChild(option);
-                        })
+                    //     })
                     console.log(itemers)    
                     console.log("XValue:"+xvalue + "\n")
                     console.log("YValue:"+yvalue + "\n")}).then(()=>
@@ -76,7 +70,8 @@ document.addEventListener("DOMContentLoaded",()=>
                             myChart.data.labels = array
                             console.log(myChart.data.labels)
                             myChart.update()
-                        })
+                            
+                        }).then(()=>{})
                     
        
         document.getElementById('updateButton').addEventListener('click', function() {

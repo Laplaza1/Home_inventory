@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <link rel="stylesheet" href="inventory.css">
+  </head>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0"></script>
 <script src="data.js"></script>
 <body>
-    <button id="updateButton">Update button</button>
-    <select name="" id="test">
-        <option>Defaul</option>
+  <nav>
+        <ul><a href="inventory.html">Inventory</a></ul>
 
-
-    </select>
-<canvas id="myChart" style="width:100%;"></canvas>
+        <ul><a href="create.html">Create</a></ul>
+    </nav>
+    
+<canvas id="myChart" style="width:100%;height: 710px;"></canvas>
 
 <script>
     let myChart;
@@ -28,7 +31,7 @@ myChart = new Chart(ctx, {
     labels: xValues,
     datasets: [{ 
       label: 'Red',
-      data: [860,1140,1060,1060,1070,1110,1330,2210,7830,2478],
+      data: [420,420,420,420,420,420,420,420,420,420],
       borderColor: "red",
       pointRadius: 2,
       tension: 0.4,
@@ -58,14 +61,14 @@ myChart = new Chart(ctx, {
         display: true,
         title: {
           display: true,
-          text: 'X-Axis'
+          text: 'Days'
         }
       },
       y: {
         display: true,
         title: {
           display: true,
-          text: 'Y-Axis'
+          text: 'Change'
         }
       }
     }
