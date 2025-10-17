@@ -210,6 +210,17 @@ document.addEventListener("DOMContentLoaded",()=>
                                 }
                         })
                     console.log(recipe)
+                    fetch("http://localhost:3000/recipe", {
+                        method:"POST",
+                        headers: 
+                            {
+                                "Content-Type": "application/json"
+                            },
+                        body: JSON.stringify(recipe)
+                    }).then((response)=>{
+                        console.log(response.json())
+                        console.log(recipe)})
+                    
                     
                 })
             

@@ -27,16 +27,16 @@ use tokio::sync::broadcast;
 use tower::ServiceExt;
 
 
-
+#[derive(Debug)]
 struct SimplifiedItems{
     item_name:String,
     quantity:i64,
     method_of_measure:String
 }
-
+#[derive(Debug)]
 struct Recipe{
     recipe_name:String,
-    items:Vec<SimplifiedItems>
+    itemers:Vec<SimplifiedItems>
 }
 
 
@@ -544,22 +544,47 @@ async fn create_recipe(Json(payload): Json<serde_json::Value>)->Result<Json<Valu
         {
    
             
-        match payload.get("items") {
-            Some(Value::Array(x))=>{println!("{:#?}",x);}
+        match payload.get("itemers") {
+            Some(Value::Array(x))=>{println!("{:#?}",x.iter().for_each(|f|println!("{:#?}",SimplifiedItems{item_name:f[0].to_string(),quantity:match &f[1]{
+
+                Value::Number(numba) => {numba.as_i64().unwrap()},
+                Value::String(xy) => {xy.parse::<i64>().expect("couldnt parse")},
+                _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+                
+            },method_of_measure:f[2].to_string()})))}
             _=>panic!("No the information sent wasnt an array that could be iterated and mapped into an object by its index")}
-        let recipe_payload = Recipe{
-            recipe_name: match payload.get("recipe_name") 
+        let recipe_payload = Recipe
             {
-                Some(Value::String(x))=>{x.to_string()},
-                _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+                recipe_name: match payload.get("recipe_name") 
+                    {
+                        Some(Value::String(x))=>{x.to_string()},
+                        _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
 
 
+                    },
+                itemers:match payload.get("itemers") 
+                {
+                    Some(Value::Array(x))=>{x.iter().for_each(|f|
+                                        SimplifiedItems
+                                        {
+                                            item_name:f[0].to_string(),
+                                            quantity:match &f[1]
+                                                {
+
+                                                    Some(Value::Number(numba)) => {numba.as_i64().unwrap()},
+                                                    Some(Value::String(xy)) => {xy.parse::<i64>().expect("couldnt parse")},
+                                                    _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+                        
+                                                },
+                                            method_of_measure:f[2].to_string()
+                                        })
+                                }
+                    _ =>  {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))},
+                }
             }
-        ,items: match payload.get("items") {
-            Some(Value::Array(x))=>{vec![SimplifiedItems{item_name:"".to_owned(),quantity:5,method_of_measure:"".to_owned()}]}
-            _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
-        }};
         
+
+        println!("{:#?}",recipe_payload);
 
 
         return Ok(Json(json!({"Sucess":true})))
