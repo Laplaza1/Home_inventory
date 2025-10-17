@@ -28,6 +28,17 @@ use tower::ServiceExt;
 
 
 
+struct SimplifiedItems{
+    item_name:String,
+    quantity:i64,
+    method_of_measure:String
+}
+
+struct Recipe{
+    recipe_name:String,
+    items:Vec<SimplifiedItems>
+}
+
 
 struct Change{
     user_name:String,
@@ -89,6 +100,12 @@ async fn main() {
     .route("/specificItem/{item_id}",get(specific_Item))
     .route("/item",put(change_item))
     .route("/item",delete(delete_item))
+
+    //recipe
+    .route("/recipe",post(create_recipe))
+    // .route("/recipe",get(get_recipes))
+    // .route("/recipes/{recipeID}", get(specific_recipe))
+    // .route("/recipe/{recipeID}",delete(delete_recipe))
 
 
     //get changed data
@@ -520,6 +537,69 @@ async fn pull_specific_data(Path(id): Path<String>)->Result<Json<Vec<Document>>,
     return Ok(Json(items))
 
 }
+
+//Recipe
+
+async fn create_recipe(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>
+        {
+   
+            
+        match payload.get("items") {
+            Some(Value::Array(x))=>{println!("{:#?}",x);}
+            _=>panic!("No the information sent wasnt an array that could be iterated and mapped into an object by its index")}
+        let recipe_payload = Recipe{
+            recipe_name: match payload.get("recipe_name") 
+            {
+                Some(Value::String(x))=>{x.to_string()},
+                _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+
+
+            }
+        ,items: match payload.get("items") {
+            Some(Value::Array(x))=>{vec![SimplifiedItems{item_name:"".to_owned(),quantity:5,method_of_measure:"".to_owned()}]}
+            _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+        }};
+        
+
+
+        return Ok(Json(json!({"Sucess":true})))
+
+
+    }
+
+
+// async fn get_recipes(Json(payload): Json<serde_json::Value>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+
+
+
+
+
+
+
+// }
+
+// async fn specific_recipe(Path(id): Path<String>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+
+
+
+
+
+// }
+
+
+// async fn delete_recipe(Path(id): Path<String>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+
+
+
+
+
+
+// }
+
+
+
+
+
 
 
 

@@ -1,31 +1,26 @@
 const items = new Map()
 
 
+class item {
+    constructor(item_name,quantity,method_of_Measure) {
+    this.item_name = item_name;
+    this.quantity = quantity;
+    this.method_of_Measure = method_of_Measure
+        
+    }
 
-document.addEventListener("DOMContentLoaded",()=>
+
+}
+
+
+let xyz
+try{
+    xyz=fetch("https://home-inventory-bml1.onrender.com/item").then((response)=>response.json()).then((data)=>
     {
         
-        document.querySelectorAll("#add").forEach((e)=>
-            {
-                e.addEventListener("click",(event)=>
-                    {
-                        console.log("Button Colicked")
-                        console.log(event.target.parentElement.querySelector("#item"))
-                        event.target.parentElement.querySelector("#itemList").appendChild(event.target.parentElement.querySelector("#item").cloneNode(true))
-                        console.log(event.target.parentElement)
-                    });
-                    
-                
-                    
-                
-            })
-            items.forEach((value,key,map)=>{console.log("test")})
-            
-    })
-fetch("https://home-inventory-bml1.onrender.com/item").then((response)=>response.json()).then((data)=>
-    {
         data.forEach((e)=>
             {
+
                 items.set(e.item_name,e)
             });
             console.log(items.keys())
@@ -47,15 +42,32 @@ fetch("https://home-inventory-bml1.onrender.com/item").then((response)=>response
                                 {
                                     case "Meat": 
                                         {
+                                            let x = document.createElement("option")
+                                            x.text = key
+                                            document.querySelector("#Meats").querySelector("#item").querySelector("#itemselectInput").appendChild(x)
+                                            console.log(document.querySelector("#Meats").querySelector("#item"))
                                             return console.log("We have the Meats")
                                         };
                                     case "Spice": 
                                         {
+                                            let x = document.createElement("option")
+                                            x.text = key
+                                            document.querySelector("#Spices").querySelector("#item").querySelector("#itemselectInput").appendChild(x)
                                             console.log("What is this? ");
                                             return console.log("Spicy")
                                         };
+                                    case "Dairy":
+                                        {
+                                            let x = document.createElement("option")
+                                            x.text = key
+                                            document.querySelector("#Dairy").querySelector("#item").querySelector("#itemselectInput").appendChild(x)
+                                            return console.log("This is Dairy")
+                                        }
                                     case "Other": 
                                         {
+                                            let x = document.createElement("option")
+                                            x.text = key
+                                            document.querySelector("#Other").querySelector("#item").querySelector("#itemselectInput").appendChild(x)
                                             return console.log("What is this?")
                                         };
                                     default: 
@@ -67,7 +79,145 @@ fetch("https://home-inventory-bml1.onrender.com/item").then((response)=>response
                         
                         })
            
-                    console.log(items.keys())
+                    //console.log(items.keys())
                 }
         
-        })
+        })}catch{
+            console.log("fetch failed")
+        }
+
+document.addEventListener("DOMContentLoaded",()=>
+    {
+        const loadingScreen = document.getElementById("loading-screen");
+        const mainContent = document.getElementById("main-content");
+        if (xyz)
+            {
+                Promise.allSettled([Promise.resolve(xyz)]).then((results)=>
+                {
+                
+                    if (results[0].status=="fulfilled")
+                        {
+                                
+                                console.log("Loaded")
+                                loadingScreen.style.display = "none";
+                                mainContent.style.display = "block";
+                        }  
+                })
+                
+            }
+        
+        document.querySelectorAll("#quantity").forEach((o)=>
+            {
+                o.addEventListener("input",(evento)=>
+                    {
+                        let v = evento.target.value
+                        if (v<0)
+                            {
+                                evento.target.value = v*-1
+                            }
+                        
+                    })
+            })    
+        document.querySelectorAll("#add").forEach((e)=>
+            {
+                e.addEventListener("click",(event)=>
+                    {
+                        console.log("Button Colicked")
+                        console.log(event.target.parentElement.querySelector("#item"))
+                        event.target.parentElement.querySelector("#itemList").appendChild(event.target.parentElement.querySelector("#item").cloneNode(true))
+                        console.log(event.target.parentElement)
+                    });
+            })
+
+            //Reset button
+            document.getElementById("reset").addEventListener("click",(event)=>
+                {
+                    let items = document.querySelectorAll("#item")
+                    items.forEach((item)=>
+                        {
+                            item.childNodes.forEach((child)=>
+                                
+                                {
+                                    console.log(child)
+                                    //child.textContent=""
+                                    child.value = "Select"
+                                })
+
+
+                        })
+
+
+                })
+            
+                //Remove Buttons
+            document.querySelectorAll("#Remove").forEach((e)=>
+            {
+                e.addEventListener("click",(event)=>
+                    {
+
+                        let last_elem = event.target.parentElement.querySelectorAll("#item").length
+                        if (last_elem>1)
+                            {
+                                console.log("Remove Button Colicked");
+                                event.target.parentElement.querySelectorAll("#item")[-1].remove(true);
+                            }
+                        else
+                            {
+                                console.log("Stop trying to remove the only remaining item field for this type")
+                            }
+                    });
+                    
+                
+                    
+                
+            })
+            document.getElementById("submit").addEventListener("click",(event)=>
+                {
+
+                    let recipe = 
+                    {
+                        recipe_name:event.target.parentElement.querySelector("#nameInput").value,
+                    itemers:[]
+                    }
+                    document.querySelectorAll("#item").forEach((item)=>
+                        {
+                            console.log(item.parentElement.parentElement)
+                            let itemo = []
+                            item.childNodes.forEach((itemChildren)=>
+                                {
+                                    if (!itemChildren.value | (itemChildren.value=="Select"))
+                                        {    
+                                            return
+                                        }
+                                    else
+                                        {
+
+                                            itemo.push(itemChildren.value)
+                                            console.log(itemChildren.value)
+
+                                        }
+                                })
+                            if (!itemo | (itemo.length<1))
+                                {
+                                    return
+                                }
+                            else
+                                {
+                                    console.log("Itemo",itemo)
+                                    itemo[0]= items.get(itemo[0])["_id"]["$oid"]
+                                    console.log(itemo[0])
+                                    recipe.itemers.push(itemo)
+                                }
+                        })
+                    console.log(recipe)
+                    
+                })
+            
+            
+    })
+
+
+
+
+  
+  

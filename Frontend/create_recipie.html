@@ -8,13 +8,19 @@
     <title>Document</title>
 </head>
 <body>
+    
     <nav>
         <ul><a href="inventory.html">Inventory</a></ul>
 
         <ul><a href="create.html">Create</a></ul>
 
     </nav>
-    <h1 id="create_title">Create Inventory</h1>
+    <div id="loading-screen">
+        <div class="spinner">
+        </div>
+    </div>
+    <div id="main-content" style="display: none;"></div>
+    <h1 id="create_title">Create Recipes</h1>
     <div id="items-form-box">
         <form id="item_form" method="dialog" target="_blank">
             <label>Name</label>
@@ -31,7 +37,7 @@
                                     <select name="item" id="itemselectInput">
                                         <option>Select</option>
                                     </select>
-                                   <input placeholder="#" type="number" id="quantity">
+                                   <input placeholder="#" min="0" type="number" id="quantity">
                                     <select name="method of measure" id="selectInput">
                                         <option>Select</option>
                                         <option>Gallon</option>
@@ -47,6 +53,7 @@
                                 
                             </div>
                          <button id="add" type="button">Add more</button>
+                         <button id="Remove" type="button">Remove more</button>
                     </div>
                         <div id="Spices">
                             <div id="itemList">
@@ -55,7 +62,7 @@
                                     <select name="item" id="itemselectInput">
                                         <option>Select</option>
                                     </select>
-                                   <input placeholder="#" type="number" id="quantity">
+                                   <input placeholder="#" min="0" type="number" id="quantity">
                                    <select name="method of measure" id="selectInput">
                                         <option>Select</option>
                                         <option>Gallon</option>
@@ -72,6 +79,7 @@
                                 
                             </div>
                             <button id="add" type="button">Add more</button>
+                            <button id="Remove" type="button">Remove more</button>
                     </div>
                     <div id="Dairy">
                          <div id="itemList">
@@ -80,7 +88,7 @@
                                     <select name="item" id="itemselectInput">
                                         <option>Select</option>
                                     </select>
-                                   <input placeholder="#" type="number" id="quantity">
+                                   <input placeholder="#" min="0" type="number" id="quantity">
                                    <select name="method of measure" id="selectInput">
                                         <option>Select</option>
                                         <option>Gallon</option>
@@ -96,7 +104,7 @@
                                 
                             </div>
                         <button id="add" type="button">Add more</button>
-
+                        <button id="Remove" type="button">Remove more</button>
                     </div>
                     <div id="Other">
                          <div id="itemList">
@@ -105,7 +113,7 @@
                                     <select name="item" id="itemselectInput">
                                         <option>Select</option>
                                     </select>
-                                   <input placeholder="#" type="number" id="quantity">
+                                   <input placeholder="#" min="0" type="number" id="quantity">
                                    <select name="method of measure" id="selectInput">
                                         <option>Select</option>
                                         <option>Gallon</option>
@@ -121,6 +129,7 @@
                                 
                             </div>
                         <button id="add" type="button">Add more</button>
+                        <button id="Remove" type="button">Remove more</button>
                     </div>
                     
                
@@ -128,7 +137,8 @@
                 
 
             </div>
-            <button type="button">Submit</button>
+            <button id="submit" type="button">Submit</button>
+            <button id="reset" type="button">Reset</button>
 
 
         </form>
@@ -139,6 +149,7 @@
 
 
 
+    </div>
     </div>
 </body>
 </html>
