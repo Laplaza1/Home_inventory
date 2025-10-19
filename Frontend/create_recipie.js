@@ -127,6 +127,7 @@ document.addEventListener("DOMContentLoaded",()=>
                         let y = event.target.parentElement.querySelector("#steplist")
                         
                         let x = event.target.parentElement.querySelector("#step").cloneNode(true)
+                        x.querySelector("#stepText").value = ""
                         count =document.querySelectorAll("#step").length
                         x.querySelector("#stepLabel").textContent = count+1
                         event.target.parentElement.querySelector("#steplist").appendChild(x)
