@@ -218,7 +218,9 @@ document.addEventListener("DOMContentLoaded",()=>
                     }
                     document.querySelectorAll("#item").forEach((item)=>
                         {
-                            console.log(item.parentElement.parentElement)
+                            //Uncomment this to log the type and each item
+                            // console.log(item.parentElement.parentElement)
+                            // console.log("This is the item",item)
                             let itemo = []
                             item.childNodes.forEach((itemChildren)=>
                                 {
@@ -228,28 +230,32 @@ document.addEventListener("DOMContentLoaded",()=>
                                         }
                                     else
                                         {
+                                            //Uncomment to see the childNode and the childNode value
+                                            // console.log("This is passing Children of item",itemChildren)
+                                            // console.log(itemChildren.value)
 
                                             itemo.push(itemChildren.value)
-                                            console.log(itemChildren.value)
-
                                         }
                                 })
-                            if (!itemo | (itemo.length<1))
+                            if (!itemo | (itemo.length<3))
                                 {
                                     return
                                 }
                             else
                                 {
-                                    console.log("Itemo",itemo)
+                                    //Uncomment to Check the first value
+                                    // console.log("Itemo",itemo)
+                                    // console.log(itemo[0])
                                     itemo[0]= items.get(itemo[0])["_id"]["$oid"]
-                                    console.log(itemo[0])
                                     recipe.ingredients.push(itemo)
                                 }
                         })
+                    if (recipe.ingredients.length<1){console.log("Theres no ingredients to this recipe");return}
                     document.querySelectorAll("#step").forEach((step)=>
                         {
-                            console.log(step)
-                            console.log(step.querySelector("#stepText").value);
+                            //Uncomment to check steps and values
+                            // console.log(step)
+                            // console.log(step.querySelector("#stepText").value);
                             recipe.steps.push(step.querySelector("#stepText").value)
                         })
                     console.log(recipe)
@@ -260,10 +266,18 @@ document.addEventListener("DOMContentLoaded",()=>
                                 "Content-Type": "application/json"
                             },
                         body: JSON.stringify(recipe)
-                    }).then((response)=>{
-                        console.log(response.json())
-                        console.log(recipe)})
-                    
+                    }).then((response)=>
+                        {
+
+                        // Uncomment to check response
+                        // console.log(response.json())
+                        // console.log(recipe)})
+                            if (!response.ok)
+                                {
+                                    alert("Recipe Failed to be created! Check your values and try again.")
+
+                                }
+                        })
                     
                 })
             
