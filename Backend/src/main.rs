@@ -609,7 +609,7 @@ async fn create_recipe(Json(payload): Json<serde_json::Value>)->Result<Json<Valu
 
 
                     },
-                "ingredients":match payload.get("itemers") 
+                "ingredients":match payload.get("ingredients") 
                 {
                     Some(Value::Array(x))=>{let ab:Vec<Document> =  x.iter().map(|f|
                                         doc! 
