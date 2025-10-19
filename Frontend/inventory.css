@@ -295,6 +295,41 @@ canvas{
 #item{
   inline-size: max-content;
 }
+
+label#stepLabel
+ {
+    text-align: initial;
+    width: 40%;
+    bottom: 1px;
+    top: 1;
+    display: flow;
+}
+input#prepTime {
+    width: 4%;
+}
+
+div#description {
+    display: grid
+;
+    justify-items: center;
+}
+div#steplist {
+    display: flex
+;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-content: space-around;
+    justify-content: space-evenly;
+    align-items: anchor-center;
+}
+div#step {
+    width: 20%;
+    border: 5px solid gray;
+    border-radius: 5%;
+    box-shadow: 10px 10px 5px 12px lightblue;
+    box-shadow: 10px 9px 9px 10px lightblue;
+    margin: 1%;
+}
 @media only screen and (max-width: 768px) {
   /* Styles for screens 768px wide or smaller */
   #filters{

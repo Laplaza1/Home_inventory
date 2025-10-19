@@ -40,13 +40,10 @@
                                    <input placeholder="#" min="0" type="number" id="quantity">
                                     <select name="method of measure" id="selectInput">
                                         <option>Select</option>
-                                        <option>Gallon</option>
                                         <option>Oz</option>
                                         <option>Ib</option>
                                         <option>g</option>
                                         <option>Kg</option>
-                                        <option>mL</option>
-                                        <option>L</option>
                                     </select>
                                 </div>
                                 
@@ -72,7 +69,6 @@
                                         <option>Kg</option>
                                         <option>mL</option>
                                         <option>L</option>
-                                        
                                     </select>
                                 </div>
                                 
@@ -128,15 +124,36 @@
                                 
                                 
                             </div>
+                            
                         <button id="add" type="button">Add more</button>
                         <button id="Remove" type="button">Remove more</button>
                     </div>
-                    
-               
-                    
-                
 
             </div>
+            <div id="directions">
+                <label>Steps</label>
+                <div id="steplist">
+                    <div id="step">
+                        <label id="stepLabel">1</label>
+                        <textarea id="stepText"></textarea>
+                    </div>
+                </div>
+            <br>
+            <button id="addStep" type="button">Add</button>
+            <button id="removeStep" type="button">Remove</button>
+            <br>
+            <br>
+            </div>
+            
+            <div id="description">
+                <label>Prep Time in Mins</label>
+                <input id="prepTime" min="0" step="5" type="number" placeholder="Time">
+                <label>Description</label>
+                <textarea id="descriptionInput" placeholder="Fill with other Info about recipe"></textarea>
+
+            </div>
+            <br>
+            <br>
             <button id="submit" type="button">Submit</button>
             <button id="reset" type="button">Reset</button>
 

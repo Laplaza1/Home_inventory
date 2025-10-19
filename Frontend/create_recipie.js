@@ -117,6 +117,21 @@ document.addEventListener("DOMContentLoaded",()=>
                             }
                         
                     })
+            })
+        document.querySelectorAll("#addStep").forEach((e)=>
+            {
+                e.addEventListener("click",(event)=>
+                    {
+                        console.log("Button Colicked")
+                        
+                        let y = event.target.parentElement.querySelector("#steplist")
+                        
+                        let x = event.target.parentElement.querySelector("#step").cloneNode(true)
+                        count =document.querySelectorAll("#step").length
+                        x.querySelector("#stepLabel").textContent = count+1
+                        event.target.parentElement.querySelector("#steplist").appendChild(x)
+                        
+                    });
             })    
         document.querySelectorAll("#add").forEach((e)=>
             {
@@ -128,7 +143,24 @@ document.addEventListener("DOMContentLoaded",()=>
                         console.log(event.target.parentElement)
                     });
             })
+        document.querySelectorAll("#removeStep").forEach((e)=>
+            {
+                e.addEventListener("click",(event)=>
+                    {
 
+                        let last_elem = document.querySelectorAll("#step").length
+                        
+                        if (last_elem>1)
+                            {
+                                console.log("Remove step Button Colicked");
+                                document.querySelectorAll("#step")[last_elem-1].remove();
+                            }
+                        else
+                            {
+                                console.log("Stop trying to remove the only remaining item field for this type")
+                            }
+                    });
+                })
             //Reset button
             document.getElementById("reset").addEventListener("click",(event)=>
                 {
@@ -177,7 +209,11 @@ document.addEventListener("DOMContentLoaded",()=>
                     let recipe = 
                     {
                         recipe_name:event.target.parentElement.querySelector("#nameInput").value,
-                    itemers:[]
+                        ingredients:[],
+                        steps:[],
+                        time_to_cook:document.getElementById("prepTime").value,
+                        description: document.querySelector("#descriptionInput").value
+
                     }
                     document.querySelectorAll("#item").forEach((item)=>
                         {
@@ -206,8 +242,14 @@ document.addEventListener("DOMContentLoaded",()=>
                                     console.log("Itemo",itemo)
                                     itemo[0]= items.get(itemo[0])["_id"]["$oid"]
                                     console.log(itemo[0])
-                                    recipe.itemers.push(itemo)
+                                    recipe.ingredients.push(itemo)
                                 }
+                        })
+                    document.querySelectorAll("#step").forEach((step)=>
+                        {
+                            console.log(step)
+                            console.log(step.querySelector("#stepText").value);
+                            recipe.steps.push(step.querySelector("#stepText").value)
                         })
                     console.log(recipe)
                     fetch("http://localhost:3000/recipe", {

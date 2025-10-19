@@ -1,4 +1,4 @@
-use bson::{ oid::Error, DateTime, Document,Decimal128};
+use bson::{ document, oid::Error, DateTime, Decimal128, Document};
 use chrono::{Utc};
 use serde_json::{
     Value,
@@ -27,13 +27,13 @@ use tokio::sync::broadcast;
 use tower::ServiceExt;
 
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 struct SimplifiedItems{
     item_name:String,
     quantity:i64,
     method_of_measure:String
 }
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize,Clone)]
 struct Recipe{
     recipe_name:String,
     itemers:Vec<SimplifiedItems>
@@ -72,6 +72,20 @@ struct Token{
 
 }
 
+
+// async fn recipe_to_doc(s:Recipe){
+//     let transition:Document = doc!{
+
+//         "item_name":s.recipe_name,
+//         "ingredients":match s.itemers {
+//             x=>{let ab:Vec<Vec<[String..String]>> =x.iter().map(|f| vec![f.item_name,f.quantity.to_string(),f.method_of_measure]).collect();ab},
+//             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong Type wasnt string as expected".to_string()))}
+//         }
+        
+//     };
+
+
+// }
 
 
 
@@ -542,49 +556,115 @@ async fn pull_specific_data(Path(id): Path<String>)->Result<Json<Vec<Document>>,
 
 async fn create_recipe(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>
         {
-   
-            
-        match payload.get("itemers") {
-            Some(Value::Array(x))=>{println!("{:#?}",x.iter().for_each(|f|println!("{:#?}",SimplifiedItems{item_name:f[0].to_string(),quantity:match &f[1]{
 
-                Value::Number(numba) => {numba.as_i64().unwrap()},
-                Value::String(xy) => {xy.parse::<i64>().expect("couldnt parse")},
-                _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
-                
-            },method_of_measure:f[2].to_string()})))}
-            _=>panic!("No the information sent wasnt an array that could be iterated and mapped into an object by its index")}
-        let recipe_payload = Recipe
+            println!("{:#?}",payload);
+            let steps:Vec<String> = match payload.get("steps") 
             {
-                recipe_name: match payload.get("recipe_name") 
+                Some(Value::Array((x)))=>{println!("{:#?}",x);let ab = x.iter().map(|f|f.to_string()).collect();ab},
+                _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Cant find steps".to_string()))}
+            };
+
+            let cooktime:i64 = match payload.get("time_to_cook")
+                {
+                    Some(Value::String(s))=>{s.parse::<i64>().expect("Error converting String to i64")},
+                    Some(Value::Number(n))=>{n.as_i64().expect("Error converting Number to i64")},
+                    _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Cant find time to cook".to_string()))}
+                };
+            let description:String = match payload.get("description")
+                {
+                    Some(Value::String(s))=>{s.to_string()}
+                    _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Cant find description".to_string()))}
+
+                };
+            {
+            // "recipe_name": "Chicken Breast",
+            // "ingredients": 
+            //      [
+                //     [
+                //         "68d06efea83582e9f1594cd4",
+                //         "3",
+                //         "Ib"
+                //     ],
+                //     [
+                //         "68b480494cc938d8792e81ca",
+                //         "6",
+                //         "Gallon"
+                //     ]
+            //      ],
+            // "steps": 
+            //     [
+                //     "tezt1",
+                //     "tezt2"
+            //      ],
+            // "time_to_cook": "35",
+            // "description": "test desc"
+}
+        
+        let recipe_payload = doc! 
+            {
+                "recipe_name": match payload.get("recipe_name") 
                     {
                         Some(Value::String(x))=>{x.to_string()},
-                        _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+                        _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Cant find recipe_name".to_string()))}
 
 
                     },
-                itemers:match payload.get("itemers") 
+                "ingredients":match payload.get("itemers") 
                 {
-                    Some(Value::Array(x))=>{x.iter().for_each(|f|
-                                        SimplifiedItems
+                    Some(Value::Array(x))=>{let ab:Vec<Document> =  x.iter().map(|f|
+                                        doc! 
                                         {
-                                            item_name:f[0].to_string(),
-                                            quantity:match &f[1]
+                                            "item_name":match &f[0] 
+                                                {
+                                                    Value::String(x)=>{x.trim_matches('"').parse::<String>().expect("Error")}
+                                                    _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong Type wasnt string as expected".to_string()))}
+                                                },
+                                            "quantity":match &f[1]
                                                 {
 
-                                                    Some(Value::Number(numba)) => {numba.as_i64().unwrap()},
-                                                    Some(Value::String(xy)) => {xy.parse::<i64>().expect("couldnt parse")},
-                                                    _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+                                                    Value::String(x)=> {x.parse::<i64>().unwrap()},
+                                                    Value::Number(x) => {x.as_i64().unwrap()},
+                                                    _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Error on Second Quantity check".to_string()))}
                         
                                                 },
-                                            method_of_measure:f[2].to_string()
-                                        })
+                                            "method_of_measure":match &f[2] 
+                                                {
+                                                    Value::String(x)=>{x.trim_matches('"').parse::<String>().expect("Error")}
+                                                    _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong Type wasnt string as expected".to_string()))}
+                                                },
+                                        }).collect();
+                                        
+                                        ab
                                 }
-                    _ =>  {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))},
-                }
-            }
+                    _ =>  {panic!("{:#?}", (StatusCode::NOT_FOUND,"Cant find vec".to_string()))},
+                },
+                "steps": steps,
+                "time_to_cook":cooktime,
+                "Description":description
+                                            
+            };
+                    
         
-
+        
         println!("{:#?}",recipe_payload);
+
+
+        let data:Collection<Document> = match handle_client().await 
+        {
+            Ok(c) => { c.database("test").collection("recipe")},
+            Err(_) => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+        };
+
+        let inserto = data.insert_one(recipe_payload, None).await.ok();
+        let curser = data
+        .find(None,None)
+        .await
+        .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
+
+    
+
+
+        // println!("{:#?}",Document::try_from(serde_json::to_string(&recipe_payload).expect("err")););
 
 
         return Ok(Json(json!({"Sucess":true})))
