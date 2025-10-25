@@ -121,6 +121,7 @@ async fn main() {
     // .route("/recipes/{recipeID}", get(specific_recipe))
     // .route("/recipe/{recipeID}",delete(delete_recipe))
 
+    .route("/test",get(test))
 
     //get changed data
     .route("/data",get(pull_data))
@@ -708,9 +709,12 @@ async fn get_recipes()->Result<Json<Vec<Document>>,(StatusCode,String)>{
 
 
 
+async fn test()->Result<Json<Value>,(StatusCode,String)>{
+    return Ok(Json(json!({"Sucess":true})))
 
 
 
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
