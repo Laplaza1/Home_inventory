@@ -117,7 +117,7 @@ async fn main() {
 
     //recipe
     .route("/recipe",post(create_recipe))
-    // .route("/recipe",get(get_recipes))
+    .route("/recipe",get(get_recipes))
     // .route("/recipes/{recipeID}", get(specific_recipe))
     // .route("/recipe/{recipeID}",delete(delete_recipe))
 
@@ -672,16 +672,21 @@ async fn create_recipe(Json(payload): Json<serde_json::Value>)->Result<Json<Valu
 
     }
 
+async fn get_recipes()->Result<Json<Vec<Document>>,(StatusCode,String)>{
+    let data:Collection<Document> = match handle_client().await 
+        {
+            Ok(c) => { c.database("test").collection("recipe")},
+            Err(_) => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+        };
+        let curser = data.find(None,None)
+        .await
+        .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
 
-// async fn get_recipes(Json(payload): Json<serde_json::Value>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
 
+        let items:Vec<Document> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x))})?;
 
-
-
-
-
-
-// }
+        return Ok(Json(items));
+}
 
 // async fn specific_recipe(Path(id): Path<String>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
 
