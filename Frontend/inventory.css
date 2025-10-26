@@ -348,17 +348,45 @@ div#step {
 
 
 #Description {
+  text-wrap: auto;
   display: ruby;
 }
 
+#hidden{
+  display: none;
+}
 
 #time_to_cook {
     display: ruby;
 }
 
 #collapse {
+  margin: 8%;
+  width: 30%;
     display: grid;
     justify-content: center;
+}
+#collapseButton {
+  margin: 8%;
+    float: right;
+    justify-self: right;
+    border-radius: 25%;
+    
+}
+
+#recipe {
+  border: black 2px dotted;
+  border-radius: 30%;
+  width: 30%;
+  box-shadow: 10px 10px 5px 12px gray;
+
+}
+
+
+#steps {
+    border: black solid 2px;
+    border-radius: 10%;
+    padding: 2%;
 }
 
 

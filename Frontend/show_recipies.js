@@ -58,7 +58,7 @@ let items = new data_store("items")
 
 
 
-document.addEventListener("DOMContentLoaded",async (event)=>{
+document.addEventListener("DOMContentLoaded",async (evento)=>{
     console.log("recipe test")
     await recipes.pull_data("https://home-inventory-bml1.onrender.com/recipe")
     console.log(recipes.data)
@@ -66,20 +66,79 @@ document.addEventListener("DOMContentLoaded",async (event)=>{
     console.log("Items test")
     await items.pull_data("https://home-inventory-bml1.onrender.com/item",map=true)
     
-    await check_availability(recipes.data[0].ingredients[0].item_name,10)
-
-    recipes.data.forEach(async (each)=>
+    
+    await recipes.data.forEach(async (recipe)=>
         {
-            each.ingredients.forEach(async (each_ingredient) => 
+
+            let new_recipe = document.getElementById("hidden").querySelector('#recipe').cloneNode(true);
+
+            let ava = []
+            for(const ingred of recipe.ingredients)
                 {
-                    console.log(each_ingredient.item_name)
-                    console.log(await check_availability(each_ingredient.item_name,each_ingredient.quantity))
+                    console.log(ingred)
+                    let xy = await check_availability(ingred.item_name,ingred.quantity)
+                    console.log(xy)
+                    ava.push(xy[0]!=false)  
+                    
+                }
+            
+            new_recipe.querySelector("#availablility").querySelector("p").textContent = (ava.find(value => value === false)==undefined)                
+            new_recipe.querySelector("#recipe_name").querySelector("p").textContent = recipe.recipe_name
+            new_recipe.querySelector("#collapseButton").addEventListener("click",async (event)=>
+                {
+                      
+                            let x = event.target.parentElement.querySelector("#collapse").style.display
+                            
+                            if(x=="none")
+                                {
+                                    event.target.parentElement.querySelector("#collapse").style.display="grid"
 
-                });
+                                }
+                            else
+                                {
+                                    event.target.parentElement.querySelector("#collapse").style.display = "none"
+                                }
 
+                })
+            new_recipe.querySelector("#Description").querySelector("p").textContent = recipe.Description
+            
+            new_recipe.querySelector("#time_to_cook").querySelector("p").textContent = recipe.time_to_cook
 
+            recipe.steps.forEach((step,index)=>
+                {
+                    console.log(step,index)
+                    let step_elem = document.createElement("label")
+                    step_elem.id= index+1
+                    step_elem.textContent = "Step " + (Number(index)+1)+" : ";
+                    let step_elem_p = document.createElement("p")
+                    step_elem_p.textContent = step
+                    step_elem.appendChild(step_elem_p)
+                    new_recipe.querySelector("#steps").appendChild(step_elem)
+                })
+
+            document.getElementById("Recipes").appendChild(new_recipe);
         })
+        console.log(document.querySelectorAll("#collapseButton"))
+        document.querySelectorAll("#collapseButton").forEach(async (e)=>
+                {
+                    console.log(e)
+                    e.addEventListener("click",async (event)=>
+                        {
+                            console.log("clicked")   
+                            let x = event.target.parentElement.querySelector("#collapse").style.display
+                            
+                            if(x=="none")
+                                {
+                                    event.target.parentElement.querySelector("#collapse").style.display="grid"
 
+                                }
+                            else
+                                {
+                                    event.target.parentElement.querySelector("#collapse").style.display = "none"
+                                }
+                        })
+                })
+            
     
 
 })
