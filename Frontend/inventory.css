@@ -330,6 +330,38 @@ div#step {
     box-shadow: 10px 9px 9px 10px lightblue;
     margin: 1%;
 }
+
+
+#recipe {
+    display: grid;
+}
+#recipe_name {
+    display: ruby;
+}
+#availablility {
+    display: ruby;
+}
+
+#quantity {
+  display: ruby;
+}
+
+
+#Description {
+  display: ruby;
+}
+
+
+#time_to_cook {
+    display: ruby;
+}
+
+#collapse {
+    display: grid;
+    justify-content: center;
+}
+
+
 @media only screen and (max-width: 768px) {
   /* Styles for screens 768px wide or smaller */
   #filters{

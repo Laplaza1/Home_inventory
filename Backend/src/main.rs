@@ -1,31 +1,29 @@
-use bson::{ document, oid::Error, DateTime, Decimal128, Document};
-use chrono::{Utc};
+use bson::{DateTime, Decimal128, Document};
+// use chrono::{Utc};
 use serde_json::{
     Value,
     json
 };
 
 use tower_http::cors::{CorsLayer, Any};
-use rand::{Rng};
+// use rand::{Rng};
 use axum::{
-    extract::{State,ws::{WebSocket, WebSocketUpgrade}, Path, Request},
-    http::{HeaderMap, Method, StatusCode,header::COOKIE}, response::{IntoResponse, Json}, routing::{delete, get, post, put}, Router
+    extract::{State, Path},
+    http::{HeaderMap, Method, StatusCode,header::COOKIE}, response::{Json}, routing::{delete, get, post, put}, Router
 };
-use core::f32;
-use std::{env, future::IntoFuture};
+use std::{env};
 
 use mongodb::{
-    bson::{doc, oid::ObjectId, Bson}, options::{ClientOptions,ResolverConfig}, results::UpdateResult, Client, Collection
+    bson::{doc, oid::ObjectId}, options::{ClientOptions,ResolverConfig}, Client, Collection
 };
 use serde::{Serialize, Deserialize};
 
 // for future additions
-use reqwest;
-use futures::{future::ok, io::Cursor, sink::SinkExt, TryStreamExt};
+use futures::{TryStreamExt};
 use std::sync::Arc;
-use tokio::sync::broadcast;
-use tower::ServiceExt;
-use std::time::{Instant,Duration};
+
+//use tower::ServiceExt;
+use std::time::{Instant};
 
 
 
@@ -42,7 +40,7 @@ struct Recipe{
 }
 
 
-struct Change{
+struct _Change{
     user_name:String,
     item_id:Option<ObjectId>,
     old_quantity:i64,
@@ -82,19 +80,7 @@ struct AppState {
 
 
 
-// async fn recipe_to_doc(s:Recipe){
-//     let transition:Document = doc!{
 
-//         "item_name":s.recipe_name,
-//         "ingredients":match s.itemers {
-//             x=>{let ab:Vec<Vec<[String..String]>> =x.iter().map(|f| vec![f.item_name,f.quantity.to_string(),f.method_of_measure]).collect();ab},
-//             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong Type wasnt string as expected".to_string()))}
-//         }
-        
-//     };
-
-
-// }
 
 
 
@@ -124,7 +110,7 @@ async fn main() {
     //Item
     .route("/item",post(insert_item)).with_state(state.clone())
     .route("/item",get(get_item)).with_state(state.clone())
-    .route("/specificItem/{item_id}",get(specific_Item)).with_state(state.clone())
+    .route("/specificItem/{item_id}",get(specific_item)).with_state(state.clone())
     .route("/item",put(change_item)).with_state(state.clone())
     .route("/item",delete(delete_item)).with_state(state.clone())
 
@@ -237,17 +223,19 @@ async fn delete_user(){
 
 
 //login function
-async fn login()-> Result<(Json<Token>),(StatusCode,String)>{
-    let client_uri = env::var("MONGODB_URI")
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
+async fn login(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Result<Json<Token>,(StatusCode,String)>{
+    
+    let _db:Collection<Document> =state.client.database("test").collection("user");
+    let _parsed_payload = payload;
 
-    let options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse client options: {}", e)))?;
-    let client = Client::with_options(options)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
+    //if parsed_payload has a match then continue;
+
 
     let token:Token=Token { token:"test12".to_string() };
+    
+    
+    
+    
     return Ok(Json(token))
 
 }
@@ -297,7 +285,7 @@ async fn get_item(State(state):State<AppState>)->Result<Json<Vec<Item>>,(StatusC
 }
 
 
-async fn specific_Item()->Result<Json<Vec<Item>>,(StatusCode,String)>{
+async fn specific_item()->Result<Json<Vec<Item>>,(StatusCode,String)>{
     let client_uri = env::var("MONGODB_URI")
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
 
@@ -325,17 +313,24 @@ async fn specific_Item()->Result<Json<Vec<Item>>,(StatusCode,String)>{
 
 
 
-async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
-    
+async fn insert_item(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>
+
+{
+    let item: Collection<Document> = state
+                                            .client
+                                            .database("test")
+                                            .collection("item");
+
     println!("payload: {:#?}",payload);
     
+    let time = Instant::now();
+
     let item_name: String = match payload.get("name")
         {
             Some(Value::String(x))=>{x.to_string()},
             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
 
         };
-    //.and_then(|x|Some(x.to_string())).unwrap();
     let category:Vec<String> = match payload.get("categories") {
         Some(Value::String(s))=>{vec![s.to_string()]},
         Some(Value::Array(s))=>{let arrayer:Vec<String>= s.iter().map(|x|x.to_string()).collect(); arrayer},
@@ -350,9 +345,7 @@ async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 
         };
     
-    //.and_then(|x|Some(x.as_i64())).unwrap().unwrap();
     
-    //.and_then(|x|Some(x.as_i64())).unwrap().unwrap();;
     let method_measure: String = match payload.get("method of measure")
         {
             Some(Value::String(x))=>{x.to_string()}
@@ -366,39 +359,36 @@ async fn insert_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
         
         };
-    //println!("Method of measure: {:#?}",method_measure);
-        //.and_then(|x|Some(x.to_string().parse::<f32>().ok())).unwrap().unwrap();
+
     let date:DateTime=  match payload.get("time") {
         Some(Value::Number(x))=>{match x.as_i64() {
          Some(x)=>{bson::DateTime::from_millis(x)},
-         _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}   
+         _ => {return Err((StatusCode::NOT_FOUND,"Wrong input".to_string()))}   
         }}
         _ =>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
     };
 
     let newo_item :Document= doc! {"item_name":item_name,"category":category,"quantity":quantity,"method_measure":method_measure,"unit_price":unit_price,"date":date};
-    println!("{:#?}",newo_item);
-    //println!("Doc of items{:#?}",new_item);
-    let client_uri = env::var("MONGODB_URI")
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
+    
+    
+    
 
-    let options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
+    
+    item
+        .insert_one(newo_item , None)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse client options: {}", e)))?;
-    let client = Client::with_options(options)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
+        .ok();
+        
+    
+    let duration = time.elapsed();
 
-
-
-    let item: Collection<Document> = client.database("test").collection("item");
-    item.insert_one(newo_item , None).await.ok();
-    //let x = item.insert_one(document, options).await.ok();
+    println!("{:?}",duration);
 
     return Ok(Json(json!({"Success":true})))
 
 }
 
-async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
+async fn change_item(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
 
     
     println!("{:#?}",payload);
@@ -460,23 +450,15 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
         _ =>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
     };
     println!("{:#?}",item_id);
-    let token = payload.get("token");
+    let _token = payload.get("token");
     let object_id = ObjectId::parse_str(item_id.as_str()).map_err(|x|(StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", x))).ok();
     let find_item = doc!{"_id":object_id};
     let new_item = doc! {"$set":{"_id":object_id,"item_name":item_name,"category":category,"quantity":quantity,"method_measure":method_measure,"unit_price":unit_price,"date":date}};
 
 
-    let client_uri = env::var("MONGODB_URI")
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
-
-    let options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse client options: {}", e)))?;
-    let client = Client::with_options(options)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
-
+    
     println!("Prior to Collection call");    
-    let itemo: Collection<Item> = client.database("test").collection("item");
+    let itemo: Collection<Item> = state.client.database("test").collection("item");
     println!("After Collection call");
 
     let _cursor = itemo.update_one(find_item,new_item,None).await.ok();
@@ -487,14 +469,14 @@ async fn change_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
     
     let change_line = doc! {"item":item_id.clone(),"change":difference,"price":unit_price,"date":date};
 
-    let _ = client.database("test").collection("change").insert_one(change_line, None).await;
+    let _ = state.client.database("test").collection("change").insert_one(change_line, None).await;
 
 
     return Ok(Json(json!({"Success":true})))
 
 }
 
-async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
+async fn delete_item(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
 
     let item_id: String= match payload.get("id")
         {
@@ -506,16 +488,9 @@ async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
     let object_id = ObjectId::parse_str(item_id.as_str()).map_err(|x|(StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", x))).ok();
     let filtered_document = doc! {"_id":object_id};
 
-    let client_uri = env::var("MONGODB_URI")
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
+   
 
-    let options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse client options: {}", e)))?;
-    let client = Client::with_options(options)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
-
-    let item: Collection<Item> = client.database("test").collection("item");
+    let item: Collection<Item> = state.client.database("test").collection("item");
 
     
 
@@ -529,10 +504,11 @@ async fn delete_item(Json(payload): Json<serde_json::Value>)->Result<Json<Value>
 async fn pull_data(State(state):State<AppState>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
     let time = Instant::now();
     let data:Collection<Document> = state.client.database("test").collection("change");
-     let curser = data
+    let curser = data
         .find(None,None)
         .await
-        .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create curser: {}", x.kind))).unwrap();
+        .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create curser: {}", x.kind)))
+        .unwrap();
 
 
     
@@ -545,12 +521,13 @@ async fn pull_data(State(state):State<AppState>)->Result<Json<Vec<Document>>,(St
 
 
 
-async fn pull_specific_data(Path(id): Path<String>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+async fn pull_specific_data(Path(id): Path<String>,State(state):State<AppState>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
     
-    let object_id = ObjectId::parse_str(id.as_str()).map_err(|x|(StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", x))).ok();
+    let start = Instant::now();
+    let _object_id = ObjectId::parse_str(id.as_str()).map_err(|x|(StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", x))).ok();
     let find_item = doc!{"item":id};
     println!("Object{:#?}",find_item);
-    let data:Collection<Document> = handle_client().await.database("test").collection("change");
+    let data:Collection<Document> = state.client.database("test").collection("change");
 
     println!("Document {:#?}",data);
      let curser = data
@@ -559,8 +536,9 @@ async fn pull_specific_data(Path(id): Path<String>)->Result<Json<Vec<Document>>,
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
 
 
+    let duration =start.elapsed();
     let items:Vec<Document> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x))})?;
-    println!("Items {:#?}",items);
+    println!("Pulling specific data took {:#?}",duration);
     
     return Ok(Json(items))
 
@@ -568,13 +546,13 @@ async fn pull_specific_data(Path(id): Path<String>)->Result<Json<Vec<Document>>,
 
 //Recipe
 
-async fn create_recipe(Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>
+async fn create_recipe(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>
         {
 
             println!("{:#?}",payload);
             let steps:Vec<String> = match payload.get("steps") 
             {
-                Some(Value::Array((x)))=>{println!("{:#?}",x);let ab = x.iter().map(|f|f.to_string()).collect();ab},
+                Some(Value::Array(x))=>{println!("{:#?}",x);let ab = x.iter().map(|f|f.to_string()).collect();ab},
                 _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Cant find steps".to_string()))}
             };
 
@@ -590,29 +568,7 @@ async fn create_recipe(Json(payload): Json<serde_json::Value>)->Result<Json<Valu
                     _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Cant find description".to_string()))}
 
                 };
-            {
-            // "recipe_name": "Chicken Breast",
-            // "ingredients": 
-            //      [
-                //     [
-                //         "68d06efea83582e9f1594cd4",
-                //         "3",
-                //         "Ib"
-                //     ],
-                //     [
-                //         "68b480494cc938d8792e81ca",
-                //         "6",
-                //         "Gallon"
-                //     ]
-            //      ],
-            // "steps": 
-            //     [
-                //     "tezt1",
-                //     "tezt2"
-            //      ],
-            // "time_to_cook": "35",
-            // "description": "test desc"
-}
+           
         
         let recipe_payload = doc! 
             {
@@ -663,18 +619,10 @@ async fn create_recipe(Json(payload): Json<serde_json::Value>)->Result<Json<Valu
         println!("{:#?}",recipe_payload);
 
 
-        let data:Collection<Document> = handle_client().await.database("test").collection("recipe");
+        let data:Collection<Document> = state.client.database("test").collection("recipe");
 
-        let inserto = data.insert_one(recipe_payload, None).await.ok();
-        let curser = data
-        .find(None,None)
-        .await
-        .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
-
-    
-
-
-        // println!("{:#?}",Document::try_from(serde_json::to_string(&recipe_payload).expect("err")););
+        let _ = data.insert_one(recipe_payload, None).await.ok();
+        
 
 
         return Ok(Json(json!({"Sucess":true})))
@@ -685,20 +633,28 @@ async fn create_recipe(Json(payload): Json<serde_json::Value>)->Result<Json<Valu
 async fn get_recipes(State(state):State<AppState>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
 
     
-    let data:Collection<Document> = state.client.database("test").collection("recipe");
-        let time =Instant::now();
-        let curser = data.find(None,None)
+    let data:Collection<Document> = state.client
+                                            .database("test")
+                                            .collection("recipe");
+    let time =Instant::now();
+    let curser = data
+        .find(None,None)
         .await
-        .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create curser: {}", x.kind))).unwrap();
-        let end_time = time.elapsed();
+        .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create curser: {}", x.kind)))
+        .unwrap();
+    
+    let end_time = time.elapsed();
 
-        let items:Vec<Document> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind))})?;
+    let items:Vec<Document> = curser
+                                    .try_collect()
+                                    .await
+                                    .map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind))})?;
 
-        
+    
 
-        println!{"{:?}",end_time}
+    println!{"{:?}",end_time}
 
-        return Ok(Json(items));
+    return Ok(Json(items));
 }
 
 // async fn specific_recipe(Path(id): Path<String>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
