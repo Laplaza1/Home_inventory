@@ -143,6 +143,7 @@ nav{
 nav ul{
     border-radius: 9%;
     width: 25%;
+    height: 20%;
     border: 1px solid black;
     margin: 1%;
 }
@@ -330,6 +331,23 @@ div#step {
     box-shadow: 10px 9px 9px 10px lightblue;
     margin: 1%;
 }
+
+
+ ul a::before {
+        content: "";
+        width: 0px;
+        height: 10px;
+        background: black;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        transition: .5s;
+    }
+
+    ul a:hover::before {
+        width: 50%;
+        transform: translateX(100%);
+    }
 
 
 #recipe {
