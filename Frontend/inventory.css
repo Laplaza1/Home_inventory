@@ -39,6 +39,7 @@ div,h1,p,ul,a {
 
 /* The slider */
 .slider {
+  z-index: -1;
   position: absolute;
   cursor: pointer;
   top: 0;
@@ -136,6 +137,10 @@ section{
 }
 
 nav{
+  position: sticky;
+  top: 0;
+  overflow: hidden;
+  background-color: #333;
    display: flex; 
    justify-content: center;
 
@@ -333,21 +338,7 @@ div#step {
 }
 
 
- ul a::before {
-        content: "";
-        width: 0px;
-        height: 10px;
-        background: black;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        transition: .5s;
-    }
-
-    ul a:hover::before {
-        width: 50%;
-        transform: translateX(100%);
-    }
+ 
 
 
 #recipe {
