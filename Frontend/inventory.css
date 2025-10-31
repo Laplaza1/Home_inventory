@@ -363,8 +363,10 @@ div#step {
 #collapse {
   margin: 8%;
   width: 30%;
-    display: grid;
-    justify-content: center;
+  display: none;
+  justify-content: center;
+  
+   
 }
 #collapseButton {
   margin: 8%;
@@ -379,8 +381,13 @@ div#step {
   border-radius: 30%;
   width: 30%;
   box-shadow: 10px 10px 5px 12px gray;
-
+  animation: fadeInRecipe 1.2s ease-in-out;
 }
+
+@keyframes fadeInRecipe {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
 
 #steps {
