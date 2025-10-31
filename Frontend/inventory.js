@@ -29,6 +29,10 @@ document.addEventListener("DOMContentLoaded",()=>
         const screenWidth = window.screen.width;
         const screenHeight = window.screen.height;
 
+
+        const loadingScreen = document.getElementById("loading-screen");
+        const mainContent = document.getElementById("main-content");
+
         console.log(`Screen Width: ${screenWidth}px, Screen Height: ${screenHeight}px`);
 
         //sumbit button
@@ -244,7 +248,7 @@ document.addEventListener("DOMContentLoaded",()=>
         document.querySelectorAll(".toggle-button.selected").forEach(elem=>{elem.className= "toggle-button"})
         console.log("Tried to close")    
         })
-        fetch("https://home-inventory-bml1.onrender.com/item")
+        let x = fetch("https://home-inventory-bml1.onrender.com/item")
         .then(Response =>Response.json())
         .then(data => 
             {
@@ -582,8 +586,27 @@ document.addEventListener("DOMContentLoaded",()=>
                                     
                             })
                     })
+
             }
         )
+        if (x !=null)
+            {
+                
+                Promise.allSettled([Promise.resolve(x)]).then((results)=>
+                {
+                
+                    if (results[0].status=="fulfilled")
+                        {
+                                
+                                console.log("Items Loaded")
+                                loadingScreen.style.display = "none";
+                                mainContent.style.display = "block";
+                                                
+                                               
+                        }  
+                })
+                
+            }
         
     }) 
 
