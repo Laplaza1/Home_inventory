@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded",()=>
         //     })
         document.getElementById("searchInput").addEventListener("input",(s)=>
             {
-                let search = document.getElementById("searchInput").value
+                let search = s.target.value
                 console.log(search)
                 document.querySelectorAll("#nameElem").forEach((ne)=>
                     {

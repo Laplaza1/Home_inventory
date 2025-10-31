@@ -121,6 +121,56 @@ document.addEventListener("DOMContentLoaded",async (evento)=>{
             document.getElementById("Recipes").appendChild(new_recipe);
         })
         console.log(document.querySelectorAll("#collapseButton"))
+
+        document.getElementById("searchInput").addEventListener("input",(event)=>
+            {
+                
+                let search = event.target.value
+                console.log(search)
+                document.querySelectorAll("#recipe_name").forEach((ne)=>
+                    {
+                        if (ne.textContent.toLowerCase().startsWith(search.toLowerCase()))
+                            {
+                                
+                                ne.parentElement.style.display = "grid"
+                            }
+                        
+                        
+
+                        else
+                            {
+                                ne.parentElement.style.display = "none";
+                            }
+                    })
+
+
+
+
+            })
+        document.getElementById("tagInput").addEventListener("change",(e)=>
+            {
+                let filter =e.target.value;
+                document.querySelectorAll("#availablility").forEach((er)=>
+                    {
+                        console.log(er.querySelector("p").textContent)
+                        let availability = er.querySelector('p')
+                        if (availability.textContent== filter|filter == "Select"|filter=="All")
+                            {
+                                
+                                er.parentElement.style.display = "grid"
+                            }
+                        
+                        
+
+                        else
+                            {
+                                er.parentElement.style.display = "none";
+                            }
+                        
+
+                    })
+                })
+
         document.querySelectorAll("#collapseButton").forEach(async (e)=>
                 {
                     console.log(e)
