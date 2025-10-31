@@ -66,7 +66,34 @@ document.addEventListener("DOMContentLoaded",async (evento)=>{
     console.log("Items test")
     await items.pull_data("https://home-inventory-bml1.onrender.com/item",map=true)
     
-    
+    const loadingScreen = document.getElementById("loading-screen");
+    const mainContent = document.getElementById("main-content");
+    // console.log("info about .data",(recipes.data== true|items.data== true ))
+        if (items.data !=null & recipes.data !=null)
+            {
+                
+                Promise.allSettled([Promise.resolve(items.data)]).then((results)=>
+                {
+                
+                    if (results[0].status=="fulfilled")
+                        {
+                                
+                                console.log("Items Loaded")
+                                Promise.allSettled([Promise.resolve(recipes.data)]).then((results)=>
+                                {
+                                
+                                    if (results[0].status=="fulfilled")
+                                        {
+                                                
+                                                console.log("Recipe Loaded")
+                                                loadingScreen.style.display = "none";
+                                                mainContent.style.display = "block";
+                                        }  
+                                })
+                        }  
+                })
+                
+            }
     await recipes.data.forEach(async (recipe)=>
         {
 
