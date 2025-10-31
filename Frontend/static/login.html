@@ -3,9 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <script src="../js/login.js"></script>
+    <title>|| Login ||</title>
 </head>
 <body>
-    
+     <div id="loading-screen">
+        <div class="spinner">
+        </div>
+    </div>
+    <div id="main-content" style="display: none;"></div>
+    <div id="loginDiv">
+        <h1>Login Portal</h1>
+        <form id="loginForm" method="dialog" target="_self"  >
+            <label for="username" id="userLabel">Username:</label>
+            <input id="username" name="username">
+            <br>
+            <label for="password" id="passLabel">Password</label>
+            <input id="password" name="password" type="text">
+            <br>
+            <button id="submitButton" type="submit">Submit</button>
+        </form>
+        <ul><a href="https://www.google.com">Forgot Password</a></ul>
+    </div>
 </body>
 </html>
