@@ -248,7 +248,7 @@ document.addEventListener("DOMContentLoaded",()=>
         document.querySelectorAll(".toggle-button.selected").forEach(elem=>{elem.className= "toggle-button"})
         console.log("Tried to close")    
         })
-        let x = fetch("http://localhost:3000/cookies",{method:"Get",credentials:"include"})
+        let x = fetch("https://home-inventory-bml1.onrender.com/item",{method:"Get",credentials:"include"})
         .then(Response =>Response.json())
         .then(data => 
             {
