@@ -146,6 +146,7 @@ async fn main() {
         HeaderValue::from_static("http://localhost:3000"),
         HeaderValue::from_static("http://localhost"),
         HeaderValue::from_static("http://127.0.0.1:5500"),
+        HeaderValue::from_static("https://laplaza1.github.io"),
     ];
 
     let cliento = handle_client().await;
