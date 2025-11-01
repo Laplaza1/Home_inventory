@@ -42,7 +42,9 @@ document.addEventListener("DOMContentLoaded",()=>{
                                 {
                                     "name":"Session_ID",
                                     "value":data.token,
-                                    "expires":new Date(Date.now()+7 * 24 * 60 * 60 * 1000)})
+                                    "expires":new Date(Date.now()+7 * 24 * 60 * 60 * 1000),
+                                    "sameSite":"none"
+                                })
                         })    
             
                 })

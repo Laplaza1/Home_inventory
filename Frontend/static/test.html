@@ -16,10 +16,10 @@
 </head>
 <body>
   <h1>Send Cookies to Axum</h1>
-  <p>Backend: <code>https://home-inventory-bml1.onrender.com/cookies</code></p>
+  <p>Backend: <code>https://home-inventory-bml1.onrender.com/item</code></p>
 
   <h3>1. Set Cookies (name=value)</h3>
-  <textarea id="cookieInput" rows="5" placeholder="session_id=abc123
+  <textarea id="cookieInput" rows="5" placeholder="Session_ID=abc123
 user=skyler
 theme=dark
 debug=true"></textarea>
@@ -32,7 +32,7 @@ debug=true"></textarea>
   <pre id="output">Click "Send" to test...</pre>
 
   <script>
-    const API_URL = 'https://home-inventory-bml1.onrender.com/cookies';
+    const API_URL = 'https://home-inventory-bml1.onrender.com/item';
     const output = document.getElementById('output');
 
     // Set multiple cookies from textarea
