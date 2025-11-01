@@ -1,21 +1,22 @@
+use axum_extra::extract::{cookie,CookieJar};
 use bson::{DateTime, Decimal128, Document};
-use cookie::CookieJar;
 // use chrono::{Utc};
 use serde_json::{
     Value,
     json
 };
+use tower_http::cors::{CorsLayer, AllowOrigin,Any};
 
-use tower_http::cors::{CorsLayer, Any};
 // use rand::{Rng};
 use axum::{
+    debug_handler,
     // response::Redirect,
     extract::{Path, State},
     http::{header::{COOKIE, SET_COOKIE}, HeaderMap, HeaderValue, Method, StatusCode}, response::{self, IntoResponse, Json},routing::{delete, get, post, put}, Router
 };
 
 use core::panic;
-use std::{env, fmt::format, hash::{DefaultHasher, Hash, Hasher}};
+use std::{env, hash::{DefaultHasher, Hash, Hasher}};
 
 use mongodb::{
     bson::{doc, oid::ObjectId}, options::{ClientOptions,ResolverConfig}, Client, Collection
@@ -28,7 +29,7 @@ use std::sync::Arc;
 
 //use tower::ServiceExt;
 use std::time::{Instant};
-use sha2::{Sha256,Sha512,Digest};
+use sha2::{Sha256,Digest};
 
 
 
@@ -117,17 +118,44 @@ fn create_token(value1:String,value2:String)->String{
 
 
 
+fn check_token(token:CookieJar)->bool 
+    {
+        println!("\nThe Cookies {:?}\n",token);
+
+        if let Some(cookie) = token.get("Session_ID")
+        {
+            let value = cookie.value();
+            println!("The value {}",value);
+            return true
+        }
+        else 
+        {
+            println!("No session_ID");
+            return false
+                
+        }
+    }
+
+
+
 
 #[tokio::main]
 async fn main() {
 
+    let origins = vec![
+        HeaderValue::from_static("http://localhost:3000"),
+        HeaderValue::from_static("http://localhost"),
+        HeaderValue::from_static("http://127.0.0.1:5500"),
+    ];
+
     let cliento = handle_client().await;
     let state = AppState { client: Arc::new(cliento) };
-
+    //let allowed_origins:[tower_http::cors::AllowOrigin;2] = ["http://localhost".parse().unwrap(),"http://127.0.0.1:5500".parse().unwrap()];
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST,Method::PUT,Method::DELETE]) // Allow GET and POST
-        .allow_origin(Any)
-        .allow_headers([axum::http::header::CONTENT_TYPE]);
+        .allow_origin(AllowOrigin::list(origins))
+        .allow_headers([axum::http::header::CONTENT_TYPE,axum::http::header::COOKIE])
+        .allow_credentials(true);
 
     
     let app = Router::new()
@@ -153,7 +181,8 @@ async fn main() {
     .route("/recipe",get(get_recipes)).with_state(state.clone())
     // .route("/recipes/{recipeID}", get(specific_recipe))
     // .route("/recipe/{recipeID}",delete(delete_recipe))
-
+    
+    .route("/cookies", get(show_cookies))
     .route("/test",get(test)).with_state(state.clone())
 
     //get changed data
@@ -303,6 +332,25 @@ async fn login(State(state):State<AppState>,Json(payload): Json<serde_json::Valu
     
 
 }
+#[axum::debug_handler]
+async fn show_cookies(jar: CookieJar) -> impl IntoResponse {
+    let mut text = String::new();
+
+    if jar.iter().count() == 0 {
+        text.push_str("No cookies received.\n");
+    } else {
+        text.push_str("Cookies:\n");
+        for cookie in jar.iter() {
+            text.push_str(&format!("  {} = {}\n", cookie.name(), cookie.value()));
+        }
+    }
+
+    println!("{}", text); // Also log to terminal
+    (StatusCode::OK, text)
+}
+
+
+
 
 
 
@@ -320,8 +368,10 @@ async fn login(State(state):State<AppState>,Json(payload): Json<serde_json::Valu
 
 //Item function
 
-async fn get_item(State(state):State<AppState>)->Result<Json<Vec<Item>>,(StatusCode,String)>{
-    
+async fn get_item(State(state):State<AppState>,headers:HeaderMap)->Result<Json<Vec<Item>>,(StatusCode,String)>{
+    println!("Headers{:?}",&headers);
+    let sol = check_token(CookieJar::from_headers(&headers));
+    println!("Token exists {}",sol);
     let start = Instant::now();
 
     let item: Collection<Item> = state.client.database("test").collection("item");

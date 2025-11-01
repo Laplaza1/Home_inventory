@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Send Cookies to Axum</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background: #f4f4f9; }
+    textarea, input, button { margin: 0.5rem 0; padding: 0.8rem; width: 100%; font-size: 1rem; }
+    button { background: #007bff; color: white; border: none; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    pre { background: #eee; padding: 1rem; border-radius: 8px; margin-top: 1rem; }
+    .log { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Send Cookies to Axum</h1>
+  <p>Backend: <code>http://localhost:3000/cookies</code></p>
+
+  <h3>1. Set Cookies (name=value)</h3>
+  <textarea id="cookieInput" rows="5" placeholder="session_id=abc123
+user=skyler
+theme=dark
+debug=true"></textarea>
+  <button onclick="setCookies()">Set Cookies</button>
+
+  <h3>2. Send All Cookies to Backend</h3>
+  <button onclick="sendCookies()">Send to /cookies</button>
+
+  <h3>Result</h3>
+  <pre id="output">Click "Send" to test...</pre>
+
+  <script>
+    const API_URL = 'http://localhost:3000/cookies';
+    const output = document.getElementById('output');
+
+    // Set multiple cookies from textarea
+    function setCookies() {
+      const text = document.getElementById('cookieInput').value.trim();
+      if (!text) {
+        output.textContent = 'Error: No cookies entered.';
+        output.className = 'error';
+        return;
+      }
+
+      const lines = text.split('\n').filter(line => line.includes('='));
+      lines.forEach(line => {
+        const [name, value] = line.split('=').map(s => s.trim());
+        if (name && value) {
+          document.cookie = `${name}=${encodeURIComponent(value)}; path=/; SameSite=None; Secure`;
+        }
+      });
+
+      output.textContent = `Success: Set ${lines.length} cookie(s):\n` + lines.join('\n');
+      output.className = 'log';
+    }
+
+    // Send request with ALL cookies
+    async function sendCookies() {
+      try {
+        const res = await fetch(API_URL, {
+          method: 'GET',
+          credentials: 'include',  // This sends ALL cookies
+          headers: {
+            'Accept': 'text/plain'
+          }
+        });
+
+        const text = await res.text();
+        output.textContent = `Status: ${res.status}\n\n${text}`;
+        output.className = res.ok ? 'log' : 'error';
+      } catch (err) {
+        output.textContent = `Network Error: ${err.message}`;
+        output.className = 'error';
+      }
+    }
+
+    // Auto-set example cookies on load
+    window.onload = () => {
+      document.getElementById('cookieInput').value = `session_id=user123
+user=skyler
+role=admin
+theme=dark`;
+      setCookies();
+    };
+  </script>
+</body>
+</html>
