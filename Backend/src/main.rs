@@ -8,11 +8,12 @@ use serde_json::{
 use tower_http::cors::{CorsLayer, Any};
 // use rand::{Rng};
 use axum::{
-    response::Redirect,
+    // response::Redirect,
     extract::{State, Path},
     http::{HeaderMap, Method, StatusCode,header::COOKIE}, response::{Json}, routing::{delete, get, post, put}, Router
 };
-use std::{env};
+use core::panic;
+use std::{env, fmt::format, hash::{DefaultHasher, Hash, Hasher}};
 
 use mongodb::{
     bson::{doc, oid::ObjectId}, options::{ClientOptions,ResolverConfig}, Client, Collection
@@ -25,6 +26,7 @@ use std::sync::Arc;
 
 //use tower::ServiceExt;
 use std::time::{Instant};
+use sha2::{Sha256,Sha512,Digest};
 
 
 
@@ -67,9 +69,21 @@ struct Item {
     unit_price: Decimal128,
     date: DateTime
 }
+
+#[derive(Debug, Serialize, Deserialize,Clone)]
+struct Usero {
+    
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    id: Option<ObjectId>, // Optional ObjectId for _id
+    username: String,
+    password:String
+}
+
+
+
 #[derive(Debug, Serialize, Deserialize,Clone)]
 struct Token{
-    token:String
+    token: String
 
 }
 
@@ -78,9 +92,26 @@ struct AppState {
     client: Arc<Client>,
 }
 
+fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    t.hash(&mut hasher);
+    hasher.finish()
+}
 
 
+fn signature_to_hex(bytes:&[u8])->String{
+    bytes.iter().map(|b|format!("{:02x}",b)).collect()
+}
 
+
+fn create_token(value1:String,value2:String)->String{
+    let mut hashest = Sha256::new();
+    hashest.update(format!("{:?}{:?}",value1,value2));    
+    let result = hashest.finalize();
+    let changed_result = signature_to_hex(&result);
+    return changed_result;
+
+}
 
 
 
@@ -224,20 +255,55 @@ async fn delete_user(){
 
 
 //login function
-async fn login(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Result<Json<Token>,(StatusCode,String)>{
+async fn login(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Result<Json<Value>,(StatusCode,String)>{
     
-    let _db:Collection<Document> =state.client.database("test").collection("user");
-    let _parsed_payload = payload;
+    println!("\n{:?}\n",payload);
 
-    //if parsed_payload has a match then continue;
+    let db:Collection<Usero> =state.client.database("test").collection("users");
+    
+    // Checks db
+    // println!("\n DB: {:?} \n",db);
+
+    let username:String = match payload.get("username"){
+        Some(Value::String(x))=>{x.to_string()},
+         _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+    
+    };
 
 
-    let token:Token=Token { token:"test12".to_string() };
+    let password:String = match payload.get("password"){
+        Some(Value::String(x))=>{x.to_string()},
+        _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
+    };
+
+
+    // println!("\n{:?},{:?}\n",username,password);
+    let token =create_token(username.clone(), password.clone());
+
+    let x =db.find(doc! {"username":username, "password":password}, None).await.unwrap();
+    
+
+    let users:Vec<Usero> =x
+                                .try_collect()
+                                .await
+                                .map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind))})?;
+    
+
+    // Uncomment to check len of user
+    // println!("\n{:?},{:?}\n",users,users.len()>0);   
+    
+    if users.len()<1 {
+        println!("Len of users are greater then 0{:?}",users.len()>0);
+        panic!("{:?}", (StatusCode::NOT_FOUND,"Not Found".to_string()));
+    };
+    // println!("Checking token for the second time: {:?}",hashed.clone());
     
     
     
+
+    return Ok(Json(json!({"token":token})))
     
-    return Ok(Json(token))
+    
 
 }
 
