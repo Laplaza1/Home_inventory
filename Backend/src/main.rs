@@ -1,4 +1,5 @@
 use bson::{DateTime, Decimal128, Document};
+use cookie::CookieJar;
 // use chrono::{Utc};
 use serde_json::{
     Value,
@@ -9,9 +10,10 @@ use tower_http::cors::{CorsLayer, Any};
 // use rand::{Rng};
 use axum::{
     // response::Redirect,
-    extract::{State, Path},
-    http::{HeaderMap, Method, StatusCode,header::COOKIE}, response::{Json}, routing::{delete, get, post, put}, Router
+    extract::{Path, State},
+    http::{header::{COOKIE, SET_COOKIE}, HeaderMap, HeaderValue, Method, StatusCode}, response::{self, IntoResponse, Json},routing::{delete, get, post, put}, Router
 };
+
 use core::panic;
 use std::{env, fmt::format, hash::{DefaultHasher, Hash, Hasher}};
 
@@ -289,18 +291,13 @@ async fn login(State(state):State<AppState>,Json(payload): Json<serde_json::Valu
                                 .map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind))})?;
     
 
-    // Uncomment to check len of user
-    // println!("\n{:?},{:?}\n",users,users.len()>0);   
     
     if users.len()<1 {
-        println!("Len of users are greater then 0{:?}",users.len()>0);
-        panic!("{:?}", (StatusCode::NOT_FOUND,"Not Found".to_string()));
+        println!("Len of users are greater then 0{:?}",users.len()<1);
+        return Err((StatusCode::NOT_FOUND,"Not Found".to_string()));
     };
-    // println!("Checking token for the second time: {:?}",hashed.clone());
     
     
-    
-
     return Ok(Json(json!({"token":token})))
     
     
