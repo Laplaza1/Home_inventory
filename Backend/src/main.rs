@@ -250,7 +250,7 @@ async fn check_user(State(state):State<AppState>,headers:HeaderMap)->Response<Bo
                                       return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
                                     })
                                 .expect("test");
-    println!("{:#?}",users);
+    println!("{:?}",users);
 
     return Json(json!({"Sucess":true})).into_response()
 
