@@ -348,7 +348,8 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
    let mut cookier = Cookie::new("Session_ID", "cookieSet");
         cookier.set_expires(Expiration::DateTime(expires_at.into()));
         cookier.set_secure(true);
-        cookier.set_same_site(SameSite::None);
+        cookier.set_same_site(SameSite::Lax);
+        cookier.set_http_only(true);
         cookier.set_path("/");
 
 
