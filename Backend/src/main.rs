@@ -287,11 +287,11 @@ async fn delete_user(){
 
 
 //login function
-async fn login(cookie:CookieJar,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Response<Body>{
+async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Response<Body>{
     
-    println!("\n{:?}\n",payload);
+    println!("\nPayload {:?}\n",payload);
     
-    println!("\n{:?}\n",cookie);
+    println!("\nHeader {:?}\n",headers);
     
     let db:Collection<Usero> =state.client.database("test").collection("users");
     

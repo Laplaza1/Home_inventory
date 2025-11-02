@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded",()=>{
                     headers: 
                         {
                             "Content-Type": "application/json",
-                            "Cookie": document.cookie
+                           
                         },
                     credentials:"include",
                     body: JSON.stringify(submittedForm)
