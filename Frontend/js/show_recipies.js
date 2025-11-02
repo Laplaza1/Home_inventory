@@ -12,7 +12,7 @@ class data_store {
 
             try 
                 {
-                    let response = await fetch(url)     
+                    let response = await fetch(url,{method:"Get",credentials:"include",headers:{"Cookie":document.cookie}})     
                     let vara = response.json() 
                     if (map)
                         {
