@@ -37,19 +37,9 @@ document.addEventListener("DOMContentLoaded",()=>{
                         {
                             return alert(result[0].value.statusText)
                         }
-                    login.then((response)=>response.json()).then((data)=>
-                        {
-                            console.log("data",data)
-                            cookieStore.set(
-                                {
-                                    "name":"Session_ID",
-                                    "value":data.token,
-                                    "expires":new Date(Date.now()+7 * 24 * 60 * 60 * 1000),
-                                    "secure": true,
-                                    "sameSite":"none"
-                                    
-                                })
-                        })    
+                    
+                    window.location.replace(window.location.toString().substring(0,window.location.toString().lastIndexOf("/")+1)+"inventory.html");
+                    
             
                 })
               
