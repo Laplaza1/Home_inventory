@@ -346,7 +346,7 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
 #[axum::debug_handler]
 async fn show_cookies(jar: CookieJar) -> impl IntoResponse {
     let mut text = String::new();
-
+    println!("\n CookieJar {:?} \n",jar);
     if jar.iter().count() == 0 {
         text.push_str("No cookies received.\n");
     } else {
