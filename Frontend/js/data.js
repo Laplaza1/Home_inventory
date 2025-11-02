@@ -39,7 +39,7 @@ let array
 document.addEventListener("DOMContentLoaded",()=>
     {
         cookieStore.get("item").then((itemo)=>{console.log(itemo.value)
-        fetch(`https://home-inventory-bml1.onrender.com/graph/${itemo.value}`).then((Response)=>Response.json()).then(data => 
+        fetch(`https://home-inventory-bml1.onrender.com/graph/${itemo.value}`,{method:"Get",credentials:"include",headers:{"Cookie":document.cookie}}).then((Response)=>Response.json()).then(data => 
             {
                 console.log()
                 data.forEach(element => 
