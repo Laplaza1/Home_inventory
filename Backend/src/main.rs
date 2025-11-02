@@ -1,19 +1,22 @@
 use axum_extra::extract::{cookie,CookieJar};
 use bson::{DateTime, Decimal128, Document};
+
+use ::cookie::{Cookie, Expiration, SameSite};
 // use chrono::{Utc};
 use serde_json::{
     Value,
     json
 };
+
 use tower_http::cors::{CorsLayer, AllowOrigin,Any};
 
 // use rand::{Rng};
 use axum::{
-    body::Body, debug_handler, extract::{Path, State}, http::{header::{self, COOKIE, SET_COOKIE}, HeaderMap, HeaderValue, Method, StatusCode}, response::{self, IntoResponse, Json, Response}, routing::{delete, get, post, put}, Router
+    body::Body, debug_handler, extract::{ws::close_code::STATUS, Path, State}, http::{header::{self, COOKIE, SET_COOKIE}, HeaderMap, HeaderValue, Method, Response, StatusCode}, response::{self, IntoResponse, Json}, routing::{delete, get, post, put}, Router
 };
 
 use core::panic;
-use std::{env, hash::{DefaultHasher, Hash, Hasher}};
+use std::{env, hash::{DefaultHasher, Hash, Hasher}, time::{Duration, SystemTime}};
 
 use mongodb::{
     bson::{doc, oid::ObjectId}, options::{ClientOptions,ResolverConfig}, Client, Collection
@@ -284,10 +287,12 @@ async fn delete_user(){
 
 
 //login function
-async fn login(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Result<Json<Value>,(StatusCode,String)>{
+async fn login(cookie:CookieJar,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Response<Body>{
     
     println!("\n{:?}\n",payload);
-
+    
+    println!("\n{:?}\n",cookie);
+    
     let db:Collection<Usero> =state.client.database("test").collection("users");
     
     // Checks db
@@ -315,17 +320,25 @@ async fn login(State(state):State<AppState>,Json(payload): Json<serde_json::Valu
     let users:Vec<Usero> =x
                                 .try_collect()
                                 .await
-                                .map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind))})?;
-    
+                                //.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind)).into_response()});
+                                .expect("error");
 
     
     if users.len()<1 {
         println!("Len of users are greater then 0{:?}",users.len()<1);
-        return Err((StatusCode::NOT_FOUND,"Not Found".to_string()));
+        return (StatusCode::NOT_FOUND,"Not Found".to_string()).into_response();
     };
+    let expires_in = Duration::from_secs(7 * 24 * 60 * 60);
+    let expires_at = SystemTime::now() + expires_in;
+
     
+   let mut cookier = Cookie::new("Session_ID", "cookieSet");
+    cookier.set_expires(Expiration::DateTime(expires_at.into()));
+    cookier.set_secure(true);
+    cookier.set_same_site(SameSite::None);
+    cookier.set_path("/");
     
-    return Ok(Json(json!({"token":token})))
+    return ([(axum::http::header::SET_COOKIE, cookier.to_string())],Json(json!({"token":token}))).into_response()
     
     
 
@@ -365,11 +378,15 @@ async fn show_cookies(jar: CookieJar) -> impl IntoResponse {
 
 
 //Item function
-
+#[axum::debug_handler]
 async fn get_item(State(state):State<AppState>,headers:HeaderMap)->Response<Body>{
     println!("Headers{:?}",&headers.clone());
     let sol = check_token(CookieJar::from_headers(&headers.clone()));
     println!("Token exists {}",sol);
+    if sol==false {
+
+        return (StatusCode::FORBIDDEN,"User isnt logged in").into_response()
+    }
     let start = Instant::now();
 
     let item: Collection<Item> = state.client.database("test").collection("item");
@@ -388,21 +405,17 @@ async fn get_item(State(state):State<AppState>,headers:HeaderMap)->Response<Body
                                 .expect("Error making item");
     
 
-    let mut headero = HeaderMap::new();
-
-     headero.insert(
-        header::SET_COOKIE,
-        HeaderValue::from_static("my_cookie=my_value; Path=/; SameSite=None; Secure"),
-    );
-    println!("Headers{:?}",headero.clone());
+    
     // Build the response with the cookie
     
-
     let duration = start.elapsed();
  
     println!("get_item took {:?} to complete",duration);
     
-    return ( headers, Json(items)).into_response();
+    
+
+
+    return (Json(items)).into_response();
 }
 
 
@@ -751,9 +764,15 @@ async fn create_recipe(State(state):State<AppState>,Json(payload): Json<serde_js
 
     }
 
-async fn get_recipes(State(state):State<AppState>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result<Json<Vec<Document>>,(StatusCode,String)>{
 
-    
+    println!("Headers{:?}",&headers.clone());
+    let sol = check_token(CookieJar::from_headers(&headers.clone()));
+    println!("Token exists {}",sol);
+    if sol==false {
+
+        return Err((StatusCode::FORBIDDEN,"User isnt logged in".to_string()))
+    }
     let data:Collection<Document> = state.client
                                             .database("test")
                                             .collection("recipe");

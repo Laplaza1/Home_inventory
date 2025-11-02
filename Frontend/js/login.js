@@ -24,10 +24,13 @@ document.addEventListener("DOMContentLoaded",()=>{
                     method:"POST",
                     headers: 
                         {
-                            "Content-Type": "application/json"
+                            "Content-Type": "application/json",
+                            "Cookie": document.cookie
                         },
+                    credentials:"include",
                     body: JSON.stringify(submittedForm)
                 })
+            console.log(login)
             Promise.allSettled([Promise.resolve(login)]).then((result)=>
                 {
                     console.log("Result ",result[0].value.status);
