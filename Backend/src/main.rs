@@ -164,7 +164,7 @@ async fn main() {
     //User
     .route("/user", post(create_user)).with_state(state.clone())
     .route("/user/{user_id}", get(check_user)).with_state(state.clone())
-    .route("/user/{user_id}",put(change_user)).with_state(state.clone())
+    .route("/user",put(change_user)).with_state(state.clone())
     .route("/user/{user_id}",delete(delete_user)).with_state(state.clone())
     
     //login
@@ -333,8 +333,10 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
                                 .await
                                 //.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind)).into_response()});
                                 .expect("error");
-    println!("{:?}",users);
+    println!("{:?}",users[0].id);
     
+
+
     if users.len()<1 {
         println!("Len of users are greater then 0{:?}",users.len()<1);
         return (StatusCode::NOT_FOUND,"Not Found".to_string()).into_response();
@@ -344,12 +346,37 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
 
     
    let mut cookier = Cookie::new("Session_ID", "cookieSet");
-    cookier.set_expires(Expiration::DateTime(expires_at.into()));
-    cookier.set_secure(true);
-    cookier.set_same_site(SameSite::None);
-    cookier.set_path("/");
+        cookier.set_expires(Expiration::DateTime(expires_at.into()));
+        cookier.set_secure(true);
+        cookier.set_same_site(SameSite::None);
+        cookier.set_path("/");
+
+
+    let mut cookier2 = Cookie::new("gsI", users[0].id.expect("nothing").to_string());
+        cookier2.set_expires(Expiration::DateTime(expires_at.into()));
+        cookier2.set_secure(true);
+        cookier2.set_same_site(SameSite::None);
+        cookier2.set_path("/");
+
+
+
+    let new_item = doc! {"$set":{"token":token}};
+    let filter = doc! {"_id":users[0].id};
+    let user: Collection<User> = state.client.database("test").collection("users");
+    let curser = user
+        .update_one(filter,new_item,None)
+        .await
+        .map_err(|x|
+            return (StatusCode::EXPECTATION_FAILED , format!("Failed to update logon {}", x)).into_response()
+        );
+    curser.ok();
+    println!("{:?}",users[0].id.expect("nothing").to_string());
+
+
+
+
     
-    return ([(axum::http::header::SET_COOKIE, cookier.to_string())],Json(json!({"token":token}))).into_response()
+    return ([(axum::http::header::SET_COOKIE, cookier.to_string())],Json(json!({"user_id":users[0].id.expect("nothing").to_string()}))).into_response()
     
     
 

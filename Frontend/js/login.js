@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     
     document.getElementById("loginForm").addEventListener("submit",(event)=>
         {
-        
+            document.getElementById("loading-screen").style.display="flex";document.getElementById("main-content").style.display="none";
             event.preventDefault()
             
 
@@ -18,8 +18,8 @@ document.addEventListener("DOMContentLoaded",()=>{
             
             console.log(JSON.stringify(submittedForm))
 
-
             let login = fetch("https://home-inventory-bml1.onrender.com/login", 
+            //let login = fetch("http://localhost:3000/login", 
                 {
                     method:"POST",
                     headers: 
@@ -37,7 +37,21 @@ document.addEventListener("DOMContentLoaded",()=>{
                         {
                             return alert(result[0].value.statusText)
                         }
-                    
+                    result[0].value.json().then((data)=>
+                        {
+                            console.log(data.user_id)
+                            let change = fetch("https://home-inventory-bml1.onrender.com/user",
+                            //let change = fetch("http://localhost:3000/user", 
+                                {
+                                    method:"PUT",
+                                    headers: 
+                                        {
+                                            "Content-Type": "application/json"
+                                        },
+                                    credentials:"include",
+                                    body: JSON.stringify({"user_id":data.user_id})
+                                }).then((evo)=>{console.log("all finished")})
+                        })
                     window.location.replace(window.location.toString().substring(0,window.location.toString().lastIndexOf("/")+1)+"inventory.html");
                     
             
