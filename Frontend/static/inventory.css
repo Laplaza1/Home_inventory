@@ -338,6 +338,16 @@ div#step {
 }
 
 
+div#loginDiv {
+  text-align: center;
+    border: .1em solid;
+    padding: 5%;
+    justify-items: center;
+    justify-content: center;
+    margin: 10%;
+    box-shadow: 10px 10px 10px 10px gray;
+}
+
  
 
 
