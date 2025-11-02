@@ -9,10 +9,7 @@ use tower_http::cors::{CorsLayer, AllowOrigin,Any};
 
 // use rand::{Rng};
 use axum::{
-    debug_handler,
-    // response::Redirect,
-    extract::{Path, State},
-    http::{header::{COOKIE, SET_COOKIE}, HeaderMap, HeaderValue, Method, StatusCode}, response::{self, IntoResponse, Json},routing::{delete, get, post, put}, Router
+    body::Body, debug_handler, extract::{Path, State}, http::{header::{self, COOKIE, SET_COOKIE}, HeaderMap, HeaderValue, Method, StatusCode}, response::{self, IntoResponse, Json, Response}, routing::{delete, get, post, put}, Router
 };
 
 use core::panic;
@@ -369,9 +366,9 @@ async fn show_cookies(jar: CookieJar) -> impl IntoResponse {
 
 //Item function
 
-async fn get_item(State(state):State<AppState>,headers:HeaderMap)->Result<Json<Vec<Item>>,(StatusCode,String)>{
-    println!("Headers{:?}",&headers);
-    let sol = check_token(CookieJar::from_headers(&headers));
+async fn get_item(State(state):State<AppState>,headers:HeaderMap)->Response<Body>{
+    println!("Headers{:?}",&headers.clone());
+    let sol = check_token(CookieJar::from_headers(&headers.clone()));
     println!("Token exists {}",sol);
     let start = Instant::now();
 
@@ -388,15 +385,24 @@ async fn get_item(State(state):State<AppState>,headers:HeaderMap)->Result<Json<V
     let items:Vec<Item> = curser
                                 .try_collect()
                                 .await
-                                .map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind))})?;
+                                .expect("Error making item");
     
 
+    let mut headero = HeaderMap::new();
+
+     headero.insert(
+        header::SET_COOKIE,
+        HeaderValue::from_static("my_cookie=my_value; Path=/; SameSite=None; Secure"),
+    );
+    println!("Headers{:?}",headero.clone());
+    // Build the response with the cookie
+    
 
     let duration = start.elapsed();
  
     println!("get_item took {:?} to complete",duration);
     
-    return Ok(Json(items))
+    return ( headers, Json(items)).into_response();
 }
 
 

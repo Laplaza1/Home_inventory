@@ -64,7 +64,8 @@ debug=true"></textarea>
           credentials: 'include',
           mode:"cors",  // This sends ALL cookies
           headers: {
-            'Accept': 'text/plain'
+            'Accept': '*/*',
+            'Cookies':document.cookie
           }
         });
 
