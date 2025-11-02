@@ -220,48 +220,59 @@ async fn create_user(Json(payload): Json<serde_json::Value>){
 }
 
 
-async fn check_user()->Result<Json<Vec<User>>,(StatusCode, String)>{
-    let client_uri = env::var("MONGODB_URI")
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
+async fn check_user(State(state):State<AppState>,headers:HeaderMap)->Response<Body>{
+    
+    println!("\nHeader {:?}\n",headers);
 
-    let options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse client options: {}", e)))?;
-    let client = Client::with_options(options)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
+    let sol = check_token(CookieJar::from_headers(&headers.clone()));
+    if sol==false {
 
-    let user: Collection<User> = client.database("test").collection("user");
+        return (StatusCode::FORBIDDEN,"User isnt logged in").into_response()
+    }
+    
+    let user_token = CookieJar::from_headers(&headers);
+    let token = user_token
+                                .get("Session_ID")
+                                .expect("Some how something fucked up").value();
+
+    let filter = doc! {"token":token};
+
+    let user: Collection<User> = state.client.database("test").collection("users");
     let curser = user
-    .find(None,None)
+    .find(filter,None)
     .await
     .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
-    let users: Vec<User> = curser.try_collect().await.map_err(|e| {
-        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-    })?;
+    let users: Vec<User> = curser
+                                .try_collect()
+                                .await
+                                .map_err(|e| 
+                                    {
+                                      return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+                                    })
+                                .expect("test");
     println!("{:#?}",users);
 
-    return Ok(Json(users))
+    return Json(json!({"Sucess":true})).into_response()
 
 }
 
-async fn change_user(headers:HeaderMap, Json(payload): Json<serde_json::Value>)->Result<String,(StatusCode,String)>{
+async fn change_user(headers:HeaderMap,State(state):State<AppState>, Json(payload): Json<serde_json::Value>)->Result<String,(StatusCode,String)>{
 
-    let user = payload.get("user_id");
-    let token = headers.get(COOKIE).and_then(|value|value.to_str().ok()).ok_or((StatusCode::BAD_REQUEST, "Missing or invalid Cookie header".to_string()));
-    println!("User: {:?} was given token: {:#?}",user,token);
+     let user: String=match payload.get("user_id") {
+        Some(Value::String(x))=>{x.to_string()},
+        _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))} 
+    };
+    let user_token = CookieJar::from_headers(&headers);
+    let token = user_token
+                                .get("Session_ID")
+                                .expect("Some how something fucked up").value();
 
-    let client_uri = env::var("MONGODB_URI")
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))?;
 
-    let options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse client options: {}", e)))?;
-    let client = Client::with_options(options)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e)))?;
-
-    let user: Collection<User> = client.database("test").collection("user");
+    let new_item = doc! {"$set":{"token":token}};
+    let filter = doc! {"_id":user};
+    let user: Collection<User> = state.client.database("test").collection("user");
     let _curser = user
-        .find(None,None)
+        .update_one(filter,new_item,None)
         .await
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
     
