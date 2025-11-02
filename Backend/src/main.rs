@@ -333,7 +333,7 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
                                 .await
                                 //.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind)).into_response()});
                                 .expect("error");
-
+    println!("{:?}",users);
     
     if users.len()<1 {
         println!("Len of users are greater then 0{:?}",users.len()<1);
