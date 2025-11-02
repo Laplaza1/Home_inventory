@@ -156,7 +156,10 @@ document.addEventListener("DOMContentLoaded",async (evento)=>{
                 console.log(search)
                 document.querySelectorAll("#recipe_name").forEach((ne)=>
                     {
-                        if (ne.textContent.toLowerCase().startsWith(search.toLowerCase()))
+                        
+                        let no = ne.querySelector("p").textContent
+                        //console.log(ne.querySelector("p").textContent,ne.querySelector("p").textContent.toLowerCase().startsWith(search.toLowerCase()))
+                        if (no.toLowerCase().startsWith(search.toLowerCase()))
                             {
                                 
                                 ne.parentElement.style.display = "grid"
