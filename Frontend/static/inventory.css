@@ -445,28 +445,28 @@ div#loginDiv {
     font-size: larger;
 }
   #buttonDiv {
-        width: 40%;
+        width: 100%;
         display: flex;
         flex-direction: column;
         flex-wrap: nowrap;
         align-content: center;
-        align-items: center;
+        
+        
     
   }
   #buttonSection {
-    width: 100%;
+    width: auto;
     padding: 10%;
-    margin-left: 5%;
-    margin-right: 5%;
+   
 }
 button#editButton {
-    width: 160%;
-     position: relative;
+   width: 100%;
+     
    
 }
 button#deleteButton {
-    width: 200%;
-    position: relative;
+    width: 100%;
+    
     
 }
 
