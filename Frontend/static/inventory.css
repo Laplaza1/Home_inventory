@@ -455,6 +455,10 @@ div#loginDiv {
         
     
   }
+  #measureDiv {
+    align-self: center;
+    display: flex;
+}
   #buttonSection {
     width: auto;
     padding: 10%;
