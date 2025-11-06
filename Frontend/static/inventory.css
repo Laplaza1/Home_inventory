@@ -462,12 +462,12 @@ div#loginDiv {
 button#editButton {
     width: 160%;
      position: relative;
-    left: -30%;
+   
 }
 button#deleteButton {
     width: 200%;
     position: relative;
-    left: -53%;
+    
 }
 
   #filters{
