@@ -456,8 +456,10 @@ div#loginDiv {
     
   }
   #measureDiv {
-    align-self: center;
     display: flex;
+    justify-content: center;
+    flex-wrap: nowrap;
+    flex-direction: row;
 }
   #buttonSection {
     width: auto;
