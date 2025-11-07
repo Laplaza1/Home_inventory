@@ -15,7 +15,7 @@ class item {
 
 let xyz
 try{
-    xyz=fetch("https://home-inventory-bml1.onrender.com/item").then((response)=>response.json()).then((data)=>
+    xyz=fetch("https://home-inventory-bml1.onrender.com/item",{method:"Get",credentials:"include",headers:{"Cookie":document.cookie}}).then((response)=>response.json()).then((data)=>
     {
         
         data.forEach((e)=>
