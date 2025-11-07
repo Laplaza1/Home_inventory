@@ -882,6 +882,7 @@ async fn send_notification(State(state):State<AppState>,Json(payload): Json<serd
     .body(reqwest::Body::from(
         serde_json::to_string
         (
+            
             &Notification
                 {
                     r#type:"inventory_status".to_string(),
