@@ -1,13 +1,13 @@
 use axum_extra::extract::{cookie,CookieJar};
 use bson::{DateTime, Decimal128, Document};
-
+use base64::{engine::general_purpose, Engine as _};
 use ::cookie::{Cookie, Expiration, SameSite};
 // use chrono::{Utc};
 use serde_json::{
     Value,
     json
 };
-
+use reqwest;
 use tower_http::cors::{CorsLayer, AllowOrigin,Any};
 
 // use rand::{Rng};
@@ -31,6 +31,25 @@ use std::sync::Arc;
 use std::time::{Instant};
 use sha2::{Sha256,Digest};
 
+#[derive(Debug, Serialize, Deserialize,Clone)]
+struct UserContact{
+
+    id:String,
+    number:String
+
+}
+#[derive(Debug, Serialize, Deserialize,Clone)]
+struct Message{
+    message: String
+}
+
+
+#[derive(Debug, Serialize, Deserialize,Clone)]
+struct Notification{
+    r#type:String,
+    to:UserContact,
+    sms:Message
+}
 
 
 #[derive(Debug, Serialize, Deserialize,Clone)]
@@ -186,6 +205,8 @@ async fn main() {
     .route("/cookies", get(show_cookies))
     .route("/test",get(test)).with_state(state.clone())
 
+
+    .route("/notify",post(send_notification).with_state(state.clone()))
     //get changed data
     .route("/data",get(pull_data)).with_state(state.clone())
     .route("/graph/{id}",get(pull_specific_data)).with_state(state.clone())
@@ -836,6 +857,51 @@ async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result<Jso
     return Ok(Json(items));
 }
 
+
+
+async fn send_notification(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
+
+    let raw = payload.get("message").expect("Couldn't get message").to_string();
+    let messageo = raw.replace("\\n", "\n");
+
+
+    let phone_number = payload.get("phone_number").expect("Couldnt find phone_number").to_string();
+
+    println!("message: {} test",messageo);
+    let credentials = env::var("notification").expect("error getting notification key");
+    let email = env::var("email").expect("Error finding email");
+    
+    println!("{:?}",format!("+{}",phone_number));
+
+
+    let encoded = base64::engine::general_purpose::STANDARD.encode(credentials);
+    let cliento = reqwest::Client::new();
+    let res = cliento.post("https://api.notificationapi.com/rezku83gmbz3zgky2pptrtw1za/sender")
+    .header("Authorization",format!("Basic {} ",encoded))
+    .header("Content-Type", "application/json")
+    .body(reqwest::Body::from(
+        serde_json::to_string
+        (
+            &Notification
+                {
+                    r#type:"inventory_status".to_string(),
+                    to:UserContact
+                        {
+                            id:email,
+                            number:format!("+{}",phone_number)
+                        },
+                    sms:Message
+                        {
+                            message:messageo.trim_matches('"').to_string()
+                        }
+                }
+        ).expect("Error converting to Json")))
+    .send()
+    .await
+    .expect("error awaiting the response");
+    println!("the status of the request is {:?}",res.status());
+    return Json(json!({"Success":true})).into_response();
+}
 // async fn specific_recipe(Path(id): Path<String>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
 
 
