@@ -865,13 +865,15 @@ async fn send_notification(State(state):State<AppState>,Json(payload): Json<serd
     let messageo = raw.replace("\\n", "\n");
 
 
-    let phone_number = payload.get("phone_number").expect("Couldnt find phone_number").to_string();
+    let raw_phone_number = payload.get("phone_number").expect("Couldnt find phone_number").to_string();
+    let phone_number = raw_phone_number.trim_matches('"').to_string();
+
 
     println!("message: {} test",messageo);
     let credentials = env::var("notification").expect("error getting notification key");
     let email = env::var("email").expect("Error finding email");
     
-    println!("{:?}",format!("+{}",phone_number));
+    println!("{:?}",phone_number);
 
 
     let encoded = base64::engine::general_purpose::STANDARD.encode(credentials);
@@ -889,7 +891,7 @@ async fn send_notification(State(state):State<AppState>,Json(payload): Json<serd
                     to:UserContact
                         {
                             id:email,
-                            number:format!("+{}",phone_number)
+                            number:phone_number
                         },
                     sms:Message
                         {
