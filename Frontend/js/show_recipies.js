@@ -126,8 +126,7 @@ document.addEventListener("DOMContentLoaded",async (evento)=>{
                                 {
                                     
                                     event.target.parentElement.querySelector("#collapse").style.display="grid"
-                                    // event.target.parentElement.querySelector("#collapse").style.animation = "fadeIn 2s ease-in-out"
-
+                                    
                                 }
                             else
                                 {

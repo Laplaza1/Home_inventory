@@ -356,6 +356,7 @@ div#loginDiv {
 #recipe {
     display: grid;
     margin: 1.5%;
+    height: min-content;
 }
 #recipe_name {
     display: ruby;
