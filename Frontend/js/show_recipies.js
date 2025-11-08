@@ -88,7 +88,13 @@ document.addEventListener("DOMContentLoaded",async (evento)=>{
                                                 console.log("Recipe Loaded")
                                                 loadingScreen.style.display = "none";
                                                 mainContent.style.display = "block";
-                                        }  
+                                        }
+                                    if (results[0].status=="rejected")
+                                        {
+                                            console.log("rejected")
+                                            window.location.replace(window.location.toString().substring(0,window.location.toString().lastIndexOf("/")+1)+"login.html");
+
+                                        }
                                 })
                         }  
                 })

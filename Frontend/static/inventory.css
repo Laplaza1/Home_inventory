@@ -199,7 +199,6 @@ body {
     font-family: Arial, sans-serif;
     
     margin: 20px auto;
-    padding: 20px;
     text-align: center;
 }
 .categories {
@@ -336,7 +335,10 @@ div#step {
     box-shadow: 10px 9px 9px 10px lightblue;
     margin: 1%;
 }
-
+div#Recipes
+ {
+    display: flex;
+}
 
 div#loginDiv {
   text-align: center;
@@ -353,6 +355,7 @@ div#loginDiv {
 
 #recipe {
     display: grid;
+    margin: 1.5%;
 }
 #recipe_name {
     display: ruby;

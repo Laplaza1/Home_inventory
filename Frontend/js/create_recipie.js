@@ -101,7 +101,13 @@ document.addEventListener("DOMContentLoaded",()=>
                                 console.log("Loaded")
                                 loadingScreen.style.display = "none";
                                 mainContent.style.display = "block";
-                        }  
+                        }
+                    if (results[0].status=="rejected")
+                        {
+                            console.log("rejected")
+                            window.location.replace(window.location.toString().substring(0,window.location.toString().lastIndexOf("/")+1)+"login.html");
+
+                        }
                 })
                 
             }
@@ -259,6 +265,7 @@ document.addEventListener("DOMContentLoaded",()=>
                             recipe.steps.push(step.querySelector("#stepText").value)
                         })
                     console.log(recipe)
+                    document.getElementById("loading-screen").style.display="flex"
                     fetch("http://localhost:3000/recipe", {
                         method:"POST",
                         headers: 
@@ -277,6 +284,8 @@ document.addEventListener("DOMContentLoaded",()=>
                                     alert("Recipe Failed to be created! Check your values and try again.")
 
                                 }
+                                document.getElementById("loading-screen").style.display="none";
+                                location.reload()
                         })
                     
                 })

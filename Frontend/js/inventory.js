@@ -591,6 +591,7 @@ document.addEventListener("DOMContentLoaded",()=>
         )
         if (x !=null)
             {
+                console.log(x)
                 
                 Promise.allSettled([Promise.resolve(x)]).then((results)=>
                 {
@@ -604,6 +605,12 @@ document.addEventListener("DOMContentLoaded",()=>
                                                 
                                                
                         }  
+                    if (results[0].status=="rejected")
+                        {
+                            console.log("rejected")
+                            window.location.replace(window.location.toString().substring(0,window.location.toString().lastIndexOf("/")+1)+"login.html");
+
+                        }
                 })
                 
             }

@@ -71,7 +71,11 @@ document.addEventListener("DOMContentLoaded",()=>
                             console.log(myChart.data.labels)
                             myChart.update()
                             
-                        }).then((eventoo)=>{document.getElementById("loading-screen").style.display="none";document.getElementById("main-content").style.display="block";})
+                        }).then((eventoo)=>
+                            {
+                                document.getElementById("loading-screen").style.display="none";
+                                document.getElementById("main-content").style.display="block";
+                            })
                     
        
         document.getElementById('updateButton').addEventListener('click', function() {

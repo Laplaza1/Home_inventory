@@ -80,6 +80,7 @@ document.addEventListener("DOMContentLoaded",()=>
                 formObject["time"] = Number(new Date())
                 console.log(Number(new Date()))
                 console.log(formObject)
+                document.getElementById("loading-screen").style.display="flex"
                 let  response = fetch(`https://home-inventory-bml1.onrender.com/item`, 
                     {
                         method:"POST",
