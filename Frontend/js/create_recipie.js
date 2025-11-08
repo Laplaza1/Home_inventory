@@ -266,7 +266,7 @@ document.addEventListener("DOMContentLoaded",()=>
                         })
                     console.log(recipe)
                     document.getElementById("loading-screen").style.display="flex"
-                    fetch("http://localhost:3000/recipe", {
+                    fetch("https://home-inventory-bml1.onrender.com/recipe", {
                         method:"POST",
                         headers: 
                             {

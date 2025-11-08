@@ -132,12 +132,6 @@ document.addEventListener("DOMContentLoaded",()=>
         
     })
 
-    // Format to two decimal places
-    // function formatDecimal() {
-    //     let value = parseFloat(input.value) || 0;
-    //     input.value = value.toFixed(2);
-        
-    // }
 
 
    
