@@ -22,7 +22,7 @@
     </div>
     <div id="main-content" style="display: none;"></div>
     <h1 id="create_title">Create Recipes</h1>
-    <div id="items-form-box">
+    <div id="items-form-box" class="container">
         <form id="item_form" method="dialog" target="_blank">
             <label>Name</label>
             <input id="nameInput" name="name" type="text" value=""><br>
@@ -140,6 +140,7 @@
                     </div>
                 </div>
             <br>
+            <br>
             <button id="addStep" type="button">Add</button>
             <button id="removeStep" type="button">Remove</button>
             <br>
@@ -149,6 +150,7 @@
             <div id="description">
                 <label>Prep Time in Mins</label>
                 <input id="prepTime" min="0" step="5" type="number" placeholder="Time">
+                <br>
                 <label>Description</label>
                 <textarea id="descriptionInput" placeholder="Fill with other Info about recipe"></textarea>
 

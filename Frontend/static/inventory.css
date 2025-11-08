@@ -1,4 +1,5 @@
 div,h1,p,ul,a {
+  color: #ffffff;
     user-select: none; /* Prevents text selection */
     -webkit-user-select: none; /* For Safari */
     -moz-user-select: none; /* For Firefox */
@@ -7,13 +8,11 @@ div,h1,p,ul,a {
 
 
 
-.items-wrapper {
+#items-wrapper {
     
-  position: fixed;
-  z-index: 0;
-  background-color: #f1f1f1;
-  text-align: center;
-  border: 3px solid black;
+  display: block;
+  padding: 1%;
+  border-radius: 5%;
   justify-items: center;
 }
 
@@ -102,19 +101,7 @@ input:checked + .slider:before {
     gap: 10px;
 }
 
-.items-wrapperheader {
-    
-    display: block;
-  border:2px solid lightslategray;
-  border-radius: 5%;
-  position: relative;
-  padding: 10px;
-  cursor: move;
-  z-index: 0;
-  background-color: lightgray;
-  color: black;
-  justify-items: center;
-}
+
 
 section{
     width: 33%;
@@ -130,6 +117,7 @@ section{
 #items-form-box{
     justify-self: center;
     text-align: center;
+    padding: 5%;
 }
 
 #create_title{
@@ -197,7 +185,7 @@ button:hover{
 }
 body {
     font-family: Arial, sans-serif;
-    
+    font-size: larger;
     margin: 20px auto;
     text-align: center;
 }
@@ -287,7 +275,6 @@ canvas{
 }
 #Meats,#Spices,#Dairy,#Other{
   width: 25%;
-  padding: 1%;
 }
 #quantity{
   width: 10%;
@@ -310,12 +297,13 @@ label#stepLabel
     display: flow;
 }
 input#prepTime {
-    width: 4%;
+        width: 34%;
+    text-align: end;
 }
 
 div#description {
-    display: grid
-;
+    display: grid;
+    
     justify-items: center;
 }
 div#steplist {
@@ -326,9 +314,9 @@ div#steplist {
     align-content: space-around;
     justify-content: space-evenly;
     align-items: anchor-center;
+    margin: 4%;
 }
 div#step {
-    width: 20%;
     border: 5px solid gray;
     border-radius: 5%;
     box-shadow: 10px 10px 5px 12px lightblue;
@@ -338,19 +326,98 @@ div#step {
 div#Recipes
  {
     display: flex;
+    padding:2%
 }
 
 div#loginDiv {
+  display: block;
   text-align: center;
-    border: .1em solid;
+    
     padding: 5%;
     justify-items: center;
     justify-content: center;
     margin: 10%;
-    box-shadow: 10px 10px 10px 10px gray;
+    
 }
 
- 
+body{background: #000000;color: #ffffff;}
+
+#users {
+  color: #ffffff;
+  margin: 2%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    position: relative;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(2px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 2rem;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2), 
+              inset 0 4px 20px rgba(255, 255, 255, 0.3);
+}
+
+#users::after{
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2rem;
+  backdrop-filter: blur(1px);
+  box-shadow: inset -10px -8px 0px -11px rgba(255, 255, 255, 1),
+              inset 0px -9px 0px -8px rgba(255, 255, 255, 1);
+  opacity: 0.6;
+  z-index: -1;
+  filter: blur(1px) drop-shadow(10px 4px 6px black) brightness(115%);
+
+
+}
+
+.container {
+  color: #ffffff;
+  margin: 2%;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    position: relative;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(2px) saturate(180%);
+  border: 1px solid rgba(85, 249, 255, 0.8);
+  border-radius: 2rem;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2), 
+              inset 0 4px 20px rgba(255, 255, 255, 0.3);
+}
+
+.container::after{
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2rem;
+  backdrop-filter: blur(1px);
+  box-shadow: inset -10px -8px 0px -11px rgba(85, 249, 255, 0.8),
+              inset 0px -9px 0px -8px rgba(85, 249, 255, 0.8);
+  opacity: 0.6;
+  z-index: -1;
+  filter: blur(1px) drop-shadow(10px 4px 6px black) brightness(115%);
+
+
+}
+
+
+
+.info_Item{width: 50%;color: #ffffff;}
+
+
+#itemTypeInfo {
+    justify-items: center;color: #ffffff;
+}
 
 
 #recipe {
@@ -414,7 +481,7 @@ div#loginDiv {
 
 
 #steps {
-    border: black solid 2px;
+    border: white solid 2px;
     border-radius: 10%;
     padding: 2%;
 }
@@ -499,12 +566,16 @@ button#deleteButton {
   button{
     padding: 5%;
   }
-  div#Recipes {
+
+
+
+  #Recipes {
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
     align-content: center;
     align-items: center;
+    padding: 2%;
 }
   #recipe {
     margin: 5%;

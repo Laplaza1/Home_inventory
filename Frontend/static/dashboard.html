@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0"></script>
+    <script src="../js/dashboard.js"></script>
+    <link rel="stylesheet" href="inventory.css">
+    <title>Dashboard</title>
+    
+</head>
+<body>
+    <div id="Info">
+        <div id="users" >
+            <div id="user_Div" class="info_Item">
+                <h3>Number of Users</h3>
+                <p id="userNums">4 Users</p>
+            </div>
+            
+            <div id="home_Div" class="info_Item">
+                <h3>Number of homes</h3>
+                <p id="homeNums">4 homes</p>
+            </div>
+            <div id="pend_Div" class="info_Item">
+                <h3>Number of pending users</h3>
+                <p id="pendNums">4 pending users</p>
+                <button type="button">Check</button>
+                <div id="pendApps">
+
+                </div>
+            </div>
+            <div id="item_Div" class="info_Item">
+                <div id="itemHeader">
+                    <h3>Number of items</h3>
+                    <p id="itemNums">4 Items</p>
+                </div>
+                <div id="itemTypeInfo" >
+                    <div id="donut">
+                        <canvas id="myChart" style="width:600px;max-width:600px;max-height: fit-content;"></canvas>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+</body>
+<script>
+    
+    const xValues = ["Meats", "Veggies", "Diary", "Animal", "Cleaning","Other"];
+let yValues = [55, 49, 44, 0, 15,22];
+const barColors = [
+  "#b91d47",
+  "#00aba9",
+  "#2b5797",
+  "#e8c3b9",
+  "#1e7145",
+  "#fdee00"
+];
+
+const ctx = document.getElementById('myChart');
+
+let myChart= new Chart(ctx, {
+  type: "doughnut",
+  data: {
+    labels: xValues,
+    datasets: [{
+      backgroundColor: barColors,
+      data: yValues
+    }]
+  },
+  options: {
+    plugins: {
+      legend: 
+        {
+            display:true,
+            labels: {
+                color:"white"
+            }
+        },
+      title: {
+        display: true,
+        text: "Items",
+        color:"white",
+        font: {size:26}
+      }
+    }
+  }
+});
+</script>
+</html>
