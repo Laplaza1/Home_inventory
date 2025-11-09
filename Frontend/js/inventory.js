@@ -389,8 +389,6 @@ document.addEventListener("DOMContentLoaded",()=>
 
                         //Box display
                         let box =document.createElement("div")
-                        box.style.borderColor="Black"
-                        box.style.border = "1 px solid black"
                         box.className = "container"
                         box.id = "items-wrapper"
 
