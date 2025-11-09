@@ -152,7 +152,7 @@ nav ul a {
 
 #buttonDiv{
 
-    display: flex;
+    display: ruby-text;
 }
 
 #buttonSection{
@@ -226,6 +226,7 @@ body {
     background-color: #0056b3;
 }
 button {
+    width: 100%;
     padding: 10px 20px;
     background-color: #007bff;
     color: white;
@@ -321,11 +322,13 @@ div#steplist {
     margin: 4%;
 }
 div#step {
+
     border: 5px solid gray;
     border-radius: 5%;
     box-shadow: 10px 10px 5px 12px lightblue;
     box-shadow: 10px 9px 9px 10px lightblue;
     margin: 1%;
+    margin-bottom: 22%;
 }
 div#Recipes
  {
