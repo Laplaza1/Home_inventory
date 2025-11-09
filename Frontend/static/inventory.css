@@ -183,6 +183,27 @@ button:hover{
     border: 2px solid black;
     text-align: center;
 }
+
+div#signup {
+    display: block;
+    padding: 10%;
+}
+#signupForm{
+
+}
+#formItem{
+
+}
+
+#Reason{
+  
+
+}
+
+#submitButton{
+  width: auto;
+}
+
 body {
     font-family: Arial, sans-serif;
     font-size: larger;

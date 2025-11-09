@@ -3,14 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="inventory.css">
+    <script src="../js/signup.js"></script>
     <title>Sign Up</title>
 </head>
 <body>
+    <div id="signup" class="container">
     <h1>Sign up</h1>
+    <form id="signupForm" target="_self" method="dialog">
+        <div id="formItem">
+            <label for="email">Email:</label>
+            <input id="email" name="email">
+        </div>
+        <div id="formItem">
+            <label for="password">Password:</label>
+            <input id="password" name="password">
+        </div>
+        <div id="formItem">
+            <label for="phoneNumber">Phone Number:</label>
+            <input id="phoneNumber" name="phoneNumber">
+        </div>
+        <div id="formItem">
+            <label for="Reason">Reason:</label>
+            <textarea id="Reason" name="Reason" ></textarea>
+        </div>
+        <button id="submitButton" type="submit">Submit</button>
+        
+    </form>
+
+
+
     
-
-
-
     </div>
 </body>
 </html>
