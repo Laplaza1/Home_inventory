@@ -9,10 +9,10 @@ div,h1,p,ul,a {
 
 
 #items-wrapper {
-    
+  
+  box-shadow: 20px 14px 32px 0px rgba(31, 38, 135, 0.2), inset -20px -9px 20px rgba(255, 255, 255, 0.3);
   display: block;
   padding: 1%;
-  border-radius: 5%;
   justify-items: center;
 }
 
