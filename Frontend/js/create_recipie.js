@@ -193,12 +193,11 @@ document.addEventListener("DOMContentLoaded",()=>
             {
                 e.addEventListener("click",(event)=>
                     {
-
                         let last_elem = event.target.parentElement.querySelectorAll("#item").length
                         if (last_elem>1)
                             {
                                 console.log("Remove Button Colicked");
-                                event.target.parentElement.querySelectorAll("#item")[-1].remove(true);
+                                event.target.parentElement.querySelectorAll("#item")[last_elem-1].remove(true);
                             }
                         else
                             {
