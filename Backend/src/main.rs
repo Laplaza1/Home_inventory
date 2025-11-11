@@ -16,7 +16,7 @@ use axum::{
 };
 
 use core::panic;
-use std::{env, hash::{DefaultHasher, Hash, Hasher}, time::{Duration, SystemTime}};
+use std::{any::{type_name, type_name_of_val}, collections::HashMap, env, hash::{DefaultHasher, Hash, Hasher}, time::{Duration, SystemTime}};
 
 use mongodb::{
     bson::{doc, oid::ObjectId}, options::{ClientOptions,ResolverConfig}, Client, Collection
@@ -24,7 +24,7 @@ use mongodb::{
 use serde::{Serialize, Deserialize};
 
 // for future additions
-use futures::{TryStreamExt};
+use futures::{io::Cursor, TryStreamExt};
 use std::sync::Arc;
 
 //use tower::ServiceExt;
@@ -65,6 +65,16 @@ struct Recipe{
 }
 
 
+#[derive(Debug, Serialize, Deserialize,Clone)]
+struct user_info{
+    user_ID:Option<ObjectId>,
+    home:String,
+    email:String,
+    phone_number:String
+
+}
+
+
 struct _Change{
     user_name:String,
     item_id:Option<ObjectId>,
@@ -92,14 +102,48 @@ struct Item {
     date: DateTime
 }
 
-#[derive(Debug, Serialize, Deserialize,Clone)]
+
+#[derive(Debug, Serialize, Deserialize,Clone,Default)]
 struct Usero {
     
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     id: Option<ObjectId>, // Optional ObjectId for _id
     username: String,
-    password:String
+    password:String,
+    status: i64
 }
+
+impl Usero {
+    fn check(self)->Result<Self,String>{
+
+        match self.status {
+           0|1 => {return Ok(self)},
+            
+            _=>{return Err("Failed to be 0|1".to_string())}
+
+        }
+    }
+    
+}
+
+#[derive(Debug, Serialize, Deserialize,Clone,Default)]
+enum AccessLevel{
+    Creator,
+    Admin,
+    #[default] 
+    User
+
+}
+#[derive(Debug, Serialize, Deserialize,Clone,Default)]
+struct UseroInfo{
+    
+        user_id:Option<ObjectId>,
+        access:AccessLevel,
+        home:String,
+        email:String,
+        phone_number:String
+}
+
 
 
 
@@ -137,11 +181,11 @@ fn create_token(value1:String,value2:String)->String{
 
 
 
-fn check_token(token:CookieJar)->bool 
+fn check_token(token:CookieJar,key:&str)->bool 
     {
         println!("\nThe Cookies {:?}\n",token);
 
-        if let Some(cookie) = token.get("Session_ID")
+        if let Some(cookie) = token.get(key)
         {
             let value = cookie.value();
             println!("The value {}",value);
@@ -149,7 +193,7 @@ fn check_token(token:CookieJar)->bool
         }
         else 
         {
-            println!("No session_ID");
+            println!("No {}",key);
             return false
                 
         }
@@ -186,6 +230,12 @@ async fn main() {
     .route("/user",put(change_user)).with_state(state.clone())
     .route("/user/{user_id}",delete(delete_user)).with_state(state.clone())
     
+
+    
+    .route("/pending",post(create_pending)).with_state(state.clone())
+
+
+
     //login
     .route("/login",post(login)).with_state(state.clone())
 
@@ -223,20 +273,76 @@ async fn main() {
 
 //User functions
 
-async fn create_user(Json(payload): Json<serde_json::Value>){
-    println!("Creating User!");
-    //Checks if Username was sent
-    let _username = payload.get("username")
-        .and_then(|v| v.as_str())
-        .ok_or((StatusCode::NOT_ACCEPTABLE, "Missing or invalid 'username' field".to_string()));
-    //Checks if password was sent
-    let _password = payload.get("password")
-        .and_then(|v| v.as_str())
-        .ok_or((StatusCode::NOT_ACCEPTABLE, "Missing or invalid 'password' field".to_string())) ;
-
-    println!("Username and Password are valid");
+async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
+    
 
 
+
+    let user_data:Collection<Usero> = state.clone().client.database("test").collection("users");
+    let user_info:Collection<UseroInfo> =state.client.database("test").collection("user_info") ;
+
+    
+
+    let username = payload
+                                .get("username")
+                                .expect("error trying to find username")
+                                .to_string().trim_matches('"').to_string();
+    let password = payload
+                                .get("password")
+                                .expect("error trying to find password")
+                               .to_string().trim_matches('"').to_string();
+
+    let email = payload
+                                    .get("email")
+                                    .expect("Couldnt find email")
+                                    .to_string().trim_matches('"').to_string();
+
+    let phone_number = payload
+                                    .get("phone_number")
+                                    .expect("coulding find phone number")
+                                    .to_string().trim_matches('"').to_string();
+
+
+
+
+
+    let user:Usero =  Usero { id: None, username: username.clone(), password: password.clone(),..Default::default()};
+  
+    user_data.insert_one(&user, None).await.ok();
+    let user_id:mongodb::Cursor<Usero> = user_data
+                                            .find(doc!{"username":username,"password":password},None)
+                                            .await
+                                            .map_err(|x|println!("Failed to create client: {}", x.kind))
+                                            .expect("error trying to collect");
+                                             
+    
+    let convert_user_id:Vec<Usero>= user_id
+                                        .try_collect()
+                                        .await
+                                        .expect("Test");
+
+    
+    println!("Created user: {:?}",convert_user_id);
+    
+
+    let user_info1:UseroInfo = UseroInfo{ user_id: convert_user_id[0].id, access: AccessLevel::User, home: "Home4".to_string(), email:email.clone(), phone_number:phone_number.clone() };
+    user_info.insert_one(&user_info1, None).await.ok();
+    let found_user_info = user_info
+                                                                    .find(doc! {"email":email,"phone_number":phone_number}, None)
+                                                                    .await
+                                                                    .map_err(|x|println!("Failed to create user info : {}", x.kind))
+                                                                    .expect("error trying to collect");
+    let vec_found_userinfo:Vec<UseroInfo> =found_user_info
+                                                    .try_collect()
+                                                    .await
+                                                    .expect("Couldnt collect into UseroInfo");
+
+    println!("Created user info: {:?}",vec_found_userinfo);
+
+
+
+
+    return Json(json!({"Sucess":true})).into_response()
  
 }
 
@@ -245,7 +351,7 @@ async fn check_user(State(state):State<AppState>,headers:HeaderMap)->Response<Bo
     
     println!("\nHeader {:?}\n",headers);
 
-    let sol = check_token(CookieJar::from_headers(&headers.clone()));
+    let sol = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
     if sol==false {
 
         return (StatusCode::FORBIDDEN,"User isnt logged in").into_response()
@@ -260,9 +366,10 @@ async fn check_user(State(state):State<AppState>,headers:HeaderMap)->Response<Bo
 
     let user: Collection<User> = state.client.database("test").collection("users");
     let curser = user
-    .find(filter,None)
-    .await
-    .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))).unwrap();
+                                    .find(filter,None)
+                                    .await
+                                    .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x)))
+                                    .unwrap();
     let users: Vec<User> = curser
                                 .try_collect()
                                 .await
@@ -441,7 +548,7 @@ async fn show_cookies(jar: CookieJar) -> impl IntoResponse {
 #[axum::debug_handler]
 async fn get_item(State(state):State<AppState>,headers:HeaderMap)->Response<Body>{
     println!("Headers{:?}",&headers.clone());
-    let sol = check_token(CookieJar::from_headers(&headers.clone()));
+    let sol = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
     println!("Token exists {}",sol);
     if sol==false {
 
@@ -827,7 +934,7 @@ async fn create_recipe(State(state):State<AppState>,Json(payload): Json<serde_js
 async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result<Json<Vec<Document>>,(StatusCode,String)>{
 
     println!("Headers{:?}",&headers.clone());
-    let sol = check_token(CookieJar::from_headers(&headers.clone()));
+    let sol = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
     println!("Token exists {}",sol);
     if sol==false {
 
@@ -905,6 +1012,64 @@ async fn send_notification(State(state):State<AppState>,Json(payload): Json<serd
     println!("the status of the request is {:?}",res.status());
     return Json(json!({"Success":true})).into_response();
 }
+
+
+// async fn pull_admin_data(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
+    
+
+
+
+
+// }
+
+
+async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
+    let data = state.client.database("test").collection("pending");
+
+    println!("payload {:?}",payload);
+
+    let username:String = match payload.get("username").expect("Couldnt find username"){
+        Value::String(x)=>{x.to_string()},
+        _=>{return StatusCode::NOT_FOUND.into_response()}
+    };
+
+    let email:String = match payload.get("email").expect("Couldnt find Email"){
+        Value::String(x)=>{x.to_string()},
+        _=>{return StatusCode::NOT_FOUND.into_response()}
+    };
+    let password = match payload.get("password").expect("couldnt find Password"){
+        Value::String(x)=>{x.to_string()},
+        _=>{return StatusCode::NOT_FOUND.into_response()}
+    };
+    let phone_number = match payload.get("phoneNumber").expect("couldnt find phone number"){
+        Value::String(x)=>{x.to_string()},
+        _=>{return StatusCode::NOT_FOUND.into_response()}
+    };
+    if phone_number.len()!=12{
+        println!("phone # is {} long not 12",phone_number.len());
+        return StatusCode::NOT_FOUND.into_response()
+    }
+    
+    let reason = match payload.get("reason").expect("couldnt find reason"){
+        Value::String(x)=>{x.to_string()},
+        _=>{return StatusCode::NOT_FOUND.into_response()}
+    };
+
+    let body = doc!{"username":username,"email":email,"password":password,"phone_number":phone_number,"reason":reason};
+
+
+    //data.insert_one(body, None).await.is_ok();
+
+    return Json(json!({"Sucess":data.insert_one(body, None).await.is_ok()})).into_response()
+
+
+
+
+
+}
+
+
+
 // async fn specific_recipe(Path(id): Path<String>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
 
 

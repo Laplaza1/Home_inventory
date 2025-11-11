@@ -11,21 +11,25 @@
     <div id="signup" class="container">
     <h1>Sign up</h1>
     <form id="signupForm" target="_self" method="dialog">
+         <div id="formItem">
+            <label for="username">Username:</label>
+            <input id="username" placeholder="Username goes here" name="username" required>
+        </div>
         <div id="formItem">
             <label for="email">Email:</label>
-            <input id="email" name="email">
+            <input id="email" name="email" placeholder="example@example.com" type="email" required>
         </div>
         <div id="formItem">
             <label for="password">Password:</label>
-            <input id="password" name="password">
+            <input id="password" name="password" placeholder="Passwordo" type="password" required >
         </div>
         <div id="formItem">
             <label for="phoneNumber">Phone Number:</label>
-            <input id="phoneNumber" name="phoneNumber">
+            <input id="phoneNumber" name="phoneNumber" type="tel"  placeholder="+12345678912" pattern="+[0-9]{11}" required>
         </div>
         <div id="formItem">
-            <label for="Reason">Reason:</label>
-            <textarea id="Reason" name="Reason" ></textarea>
+            <label for="reason">Reason:</label>
+            <textarea id="reason" name="reason" placeholder="Why do you want to join?" required ></textarea>
         </div>
         <button id="submitButton" type="submit">Submit</button>
         

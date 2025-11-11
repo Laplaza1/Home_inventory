@@ -6,20 +6,22 @@ document.addEventListener("DOMContentLoaded",(()=>
                 const form = document.getElementsByTagName("form")[0];
                 const form_Data = new FormData(form);
                 //let form_Data= new FormData(Object(SubmitEvent))
-                console.log("Form data: ",JSON.stringify(form_Data))
-                console.log(SubmitEvent)
+                let y = {}
+ 
                 form_Data.forEach((value, key) => 
                     {
-                        console.log(key,value)
+                        y[key] =value
                     })
-                let  response = fetch(`https://home-inventory-bml1.onrender.com/pending`, 
+                
+                //let  response = fetch(`https://home-inventory-bml1.onrender.com/pending`,
+                let  response = fetch(`http://localhost:3000/pending`, 
                     {
                         method:"POST",
                         headers: 
                             {
                                 "Content-Type": "application/json"
                             },
-                        body: JSON.stringify(formObject)
+                        body: JSON.stringify(y)
                     }).then((req,res)=>
                         {
                             if (req.status!=200)
