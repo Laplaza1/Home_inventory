@@ -2,12 +2,13 @@ document.addEventListener("DOMContentLoaded",(()=>
     {
         document.getElementById("signupForm").addEventListener("submit",((SubmitEvent)=>
             {
+                let ls = document.getElementById("loading-screen")
                 console.log("Submitted",SubmitEvent)
                 const form = document.getElementsByTagName("form")[0];
                 const form_Data = new FormData(form);
                 //let form_Data= new FormData(Object(SubmitEvent))
                 let y = {}
- 
+                ls.style.display = 'Flex'
                 form_Data.forEach((value, key) => 
                     {
                         y[key] =value
@@ -31,8 +32,9 @@ document.addEventListener("DOMContentLoaded",(()=>
                         
                             else
                                 {
+                                    
                                     location.reload()
-
+                                    ls.style.display = "None"
                                 }
                         })
 
