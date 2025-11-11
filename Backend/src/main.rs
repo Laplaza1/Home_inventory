@@ -257,9 +257,11 @@ async fn main() {
 
 
     .route("/notify",post(send_notification).with_state(state.clone()))
-    //get changed data
+    //Data paths
+
     .route("/data",get(pull_data)).with_state(state.clone())
     .route("/graph/{id}",get(pull_specific_data)).with_state(state.clone())
+    .route("/admin_data",get(general_data)).with_state(state.clone())
 
     .layer(cors);
 
@@ -1087,6 +1089,36 @@ async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_j
 
 
 // }
+
+
+async fn general_data(State(state):State<AppState>)->Response<Body>{
+
+
+    let data:Collection<Usero> = state.client
+                                        .database("test")
+                                        .collection("users");
+    let data_count= data
+                                    .count_documents(None, None)
+                                    .await
+                                    .expect("Couldnt convert into Vec ");
+    let homes:Collection<UseroInfo> =state.client
+                                            .database("test")
+                                            .collection("user_info");
+
+    let home_count =homes
+                                .distinct("home", None,None)
+                                .await
+                                .ok()
+                                .iter()
+                                .len();
+    
+
+                                
+
+
+    return Json(json!({"number of users":data_count,"Number of homes":home_count})).into_response();
+
+}
 
 
 
