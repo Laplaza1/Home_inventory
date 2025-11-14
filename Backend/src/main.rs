@@ -202,6 +202,22 @@ fn check_token(token:CookieJar,key:&str)->bool
 
 
 
+
+async fn check_item(State(state):State<AppState>)->HashMap<&'static str, u64>{
+
+    let item_data:Collection<Item> = state.client.database("test").collection("item");
+    let item_name = ["Meat","Spice","Vegetable","Fruit","Dairy","Cleaning","Animal"];
+    let mut item_counter= HashMap::new();
+    for i in item_name{
+        let data = item_data.count_documents(doc! {"category":doc! { "$elemMatch": { "$eq": i } }}, None).await.ok().expect("couldn't proerly find element");
+        item_counter.insert(i, data);
+    }
+
+    return item_counter
+
+}
+
+
 #[tokio::main]
 async fn main() {
 
@@ -277,7 +293,11 @@ async fn main() {
 
 async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
     
+    let sol = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
+    if sol==false {
 
+        return (StatusCode::FORBIDDEN,"User isnt logged in").into_response()
+    }
 
 
     let user_data:Collection<Usero> = state.clone().client.database("test").collection("users");
@@ -301,6 +321,10 @@ async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload
 
     let phone_number = payload
                                     .get("phone_number")
+                                    .expect("coulding find phone number")
+                                    .to_string().trim_matches('"').to_string();
+    let home = payload
+                                    .get("home")
                                     .expect("coulding find phone number")
                                     .to_string().trim_matches('"').to_string();
 
@@ -327,13 +351,25 @@ async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload
     println!("Created user: {:?}",convert_user_id);
     
 
-    let user_info1:UseroInfo = UseroInfo{ user_id: convert_user_id[0].id, access: AccessLevel::User, home: "Home4".to_string(), email:email.clone(), phone_number:phone_number.clone() };
-    user_info.insert_one(&user_info1, None).await.ok();
+    let user_info1:UseroInfo = UseroInfo{ 
+                                            user_id: convert_user_id[0].id,
+                                            access: AccessLevel::User,
+                                            home: home,
+                                            email:email.clone(),
+                                            phone_number:phone_number.clone() 
+                                        };
+    
+    
+    user_info
+        .insert_one(&user_info1, None)
+        .await
+        .ok();
     let found_user_info = user_info
                                                                     .find(doc! {"email":email,"phone_number":phone_number}, None)
                                                                     .await
                                                                     .map_err(|x|println!("Failed to create user info : {}", x.kind))
                                                                     .expect("error trying to collect");
+    
     let vec_found_userinfo:Vec<UseroInfo> =found_user_info
                                                     .try_collect()
                                                     .await
@@ -970,6 +1006,7 @@ async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result<Jso
 
 async fn send_notification(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
 
+    
     let raw = payload.get("message").expect("Couldn't get message").to_string();
     let messageo = raw.replace("\\n", "\n");
 
@@ -1091,8 +1128,12 @@ async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_j
 // }
 
 
-async fn general_data(State(state):State<AppState>)->Response<Body>{
+async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Response<Body>{
+    let sol = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
+    if sol==false {
 
+        return (StatusCode::FORBIDDEN,"User isnt logged in").into_response()
+    }
 
     let data:Collection<Usero> = state.client
                                         .database("test")
@@ -1109,14 +1150,16 @@ async fn general_data(State(state):State<AppState>)->Response<Body>{
                                 .distinct("home", None,None)
                                 .await
                                 .ok()
-                                .iter()
+                                .expect("error finding homes")
                                 .len();
-    
 
+                                
+    let item_type_count = check_item(axum::extract::State(state)).await;
+    
                                 
 
 
-    return Json(json!({"number of users":data_count,"Number of homes":home_count})).into_response();
+    return Json(json!({"number of users":data_count,"Number of homes":home_count,"Item_count":item_type_count})).into_response();
 
 }
 
