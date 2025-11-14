@@ -23,7 +23,7 @@
             </div>
             <div id="pend_Div" class="info_Item">
                 <h3>Number of pending users</h3>
-                <p id="pendNums">4 pending users</p>
+                <p id="pendNums">4</p>
                 <button type="button">Check</button>
                 <div id="pendApps">
 
@@ -32,7 +32,7 @@
             <div id="item_Div" class="info_Item">
                 <div id="itemHeader">
                     <h3>Number of items</h3>
-                    <p id="itemNums">4 Items</p>
+                    <p id="itemNums">4</p>
                 </div>
                 <div id="itemTypeInfo" >
                     <div id="donut">
@@ -46,15 +46,16 @@
 </body>
 <script>
     
-    const xValues = ["Meats", "Veggies", "Diary", "Animal", "Cleaning","Other"];
-let yValues = [55, 49, 44, 0, 15,22];
+let xValues = ["Meat", "Vegetable","Spice", "Diary", "Animal", "Cleaning","Fruit","Other"];
+let yValues = [55, 49, 44, 0, 15,22,11];
 const barColors = [
   "#b91d47",
   "#00aba9",
   "#2b5797",
   "#e8c3b9",
   "#1e7145",
-  "#fdee00"
+  "#fdee00",
+  "#a25197"
 ];
 
 const ctx = document.getElementById('myChart');

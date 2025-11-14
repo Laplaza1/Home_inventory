@@ -1159,7 +1159,7 @@ async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Response<
                                 
 
 
-    return Json(json!({"number of users":data_count,"Number of homes":home_count,"Item_count":item_type_count})).into_response();
+    return Json(json!({"number_of_users":data_count,"Number_of_homes":home_count,"Item_count":item_type_count})).into_response();
 
 }
 
