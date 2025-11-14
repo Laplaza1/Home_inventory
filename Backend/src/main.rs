@@ -150,6 +150,7 @@ struct UseroInfo{
 struct Pending{
     username:String,
     email:String,
+    home:String,
     password:String,
     phone_number:String,
     reason:String
@@ -314,7 +315,7 @@ async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload
     let user_data:Collection<Usero> = state.clone().client.database("test").collection("users");
     let user_info:Collection<UseroInfo> =state.client.database("test").collection("user_info") ;
 
-    
+    println!{"Payload: {:?}",payload}
 
     let username = payload
                                 .get("username")
@@ -336,10 +337,10 @@ async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload
                                     .to_string().trim_matches('"').to_string();
     let home = payload
                                     .get("home")
-                                    .expect("coulding find phone number")
+                                    .expect("coulding find home")
                                     .to_string().trim_matches('"').to_string();
 
-
+    
 
 
 
@@ -1091,6 +1092,10 @@ async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_j
         Value::String(x)=>{x.to_string()},
         _=>{return StatusCode::NOT_FOUND.into_response()}
     };
+    let home = match payload.get("home").expect("couldnt find home"){
+        Value::String(x)=>{x.to_string()},
+        _=>{return StatusCode::NOT_FOUND.into_response()}
+    };
     let phone_number = match payload.get("phoneNumber").expect("couldnt find phone number"){
         Value::String(x)=>{x.to_string()},
         _=>{return StatusCode::NOT_FOUND.into_response()}
@@ -1105,7 +1110,7 @@ async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_j
         _=>{return StatusCode::NOT_FOUND.into_response()}
     };
 
-    let body = Pending{username:username,email:email,password:password,phone_number:phone_number,reason:reason};
+    let body = Pending{username:username,email:email,home:home,password:password,phone_number:phone_number,reason:reason};
 
 
     //data.insert_one(body, None).await.is_ok();

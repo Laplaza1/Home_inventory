@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded",(()=>
                             pendapp.className = "container"
                             pendapp.querySelector("#userName").textContent = atomo.username
                             pendapp.querySelector("#email").textContent = atomo.email
+                            pendapp.querySelector("#home").textContent = atomo.home
                             pendapp.querySelector("#passWord").textContent = atomo.password
                             pendapp.querySelector("#phoneNumber").textContent = atomo.phone_number
                             pendapp.querySelector("#Reason").textContent = atomo.reason
@@ -40,16 +41,17 @@ document.addEventListener("DOMContentLoaded",(()=>
                                         if (child.textContent)
                                             {
                                                 console.log(String(child.textContent).trim())
-                                                body[(String(child.id).toLowerCase())] = child.textContent
+                                                body[(String(child.id).toLowerCase())] = String(child.textContent)
                                                 
                                             }
                                         
                                         else
                                             console.log(" is not real")
                                     }))
-                                console.log(body)
-                                let  response = fetch(`https://home-inventory-bml1.onrender.com/user`,
-                                //let  response = fetch(`http://localhost:3000/user`, 
+                                
+                                console.log(body,document.cook)
+                                //let  response = fetch(`https://home-inventory-bml1.onrender.com/user`,
+                                let  response = fetch(`http://localhost:3000/user`, 
                                     {
                                         method:"POST",
                                         credentials:"include",
