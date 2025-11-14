@@ -194,6 +194,15 @@ div#signup {
 #formItem{
  margin:1%;
 }
+#pendApps{
+  display: None;
+}
+
+#pendApp{
+  justify-self: center;
+  width: 50%;
+  display: block;
+}
 
 #Reason{
 
