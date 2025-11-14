@@ -1174,7 +1174,7 @@ async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Response<
                                         .await
                                         .ok()
                                         .expect("error converting");                            
-let item_type_count = check_item(axum::extract::State(state)).await;
+let item_type_count = check_item(axum::extract::State(state.clone())).await;
 
     return Json(json!({"Number_of_users":data_count,"Number_of_homes":home_count,"Item_count":item_type_count,"Pending_users":pending_data})).into_response();
 

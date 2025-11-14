@@ -20,11 +20,7 @@ document.addEventListener("DOMContentLoaded",(()=>
                 }
                 myChart.update()
             })
-         let response = fetch("https://home-inventory-bml1.onrender.com/pending",
-        //let  response = fetch(`http://localhost:3000/admin_data`,
-            {method:"Get",credentials:"include",headers:{"Cookie":document.cookie}})
-            .then((Response)=>Response.json())
-
+         
 
 
 
