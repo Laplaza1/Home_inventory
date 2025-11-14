@@ -145,6 +145,16 @@ struct UseroInfo{
 }
 
 
+#[derive(Debug, Serialize, Deserialize,Clone,Default)]
+struct Pending{
+    username:String,
+    email:String,
+    password:String,
+    phone_number:String,
+    reason:String
+
+}
+
 
 
 #[derive(Debug, Serialize, Deserialize,Clone)]
@@ -1063,7 +1073,7 @@ async fn send_notification(State(state):State<AppState>,Json(payload): Json<serd
 
 
 async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
-    let data = state.client.database("test").collection("pending");
+    let data:Collection<Pending> = state.client.database("test").collection("pending");
 
     println!("payload {:?}",payload);
 
@@ -1094,7 +1104,7 @@ async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_j
         _=>{return StatusCode::NOT_FOUND.into_response()}
     };
 
-    let body = doc!{"username":username,"email":email,"password":password,"phone_number":phone_number,"reason":reason};
+    let body = Pending{username:username,email:email,password:password,phone_number:phone_number,reason:reason};
 
 
     //data.insert_one(body, None).await.is_ok();
@@ -1154,12 +1164,19 @@ async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Response<
                                 .len();
 
                                 
-    let item_type_count = check_item(axum::extract::State(state)).await;
     
-                                
+    
+    let pending:Collection<Pending> = state.client.database("test").collection("pending");
 
+    let pending_users = pending.find(None,None).await.ok().expect("Error");
 
-    return Json(json!({"number_of_users":data_count,"Number_of_homes":home_count,"Item_count":item_type_count})).into_response();
+    let pending_data:Vec<Pending> =pending_users.try_collect()
+                                        .await
+                                        .ok()
+                                        .expect("error converting");                            
+let item_type_count = check_item(axum::extract::State(state)).await;
+
+    return Json(json!({"Number_of_users":data_count,"Number_of_homes":home_count,"Item_count":item_type_count,"Pending_users":pending_data})).into_response();
 
 }
 
