@@ -1169,10 +1169,11 @@ async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Response<
     let pending:Collection<Pending> = state.client.database("test").collection("pending");
 
     let pending_users = pending.find(None,None).await.ok().expect("Error");
+    println!("{:?}",pending_users);
 
-    let pending_data:Vec<Pending> =pending_users.try_collect()
+    let pending_data:Vec<Pending> =pending_users
+                                        .try_collect::<Vec<Pending>>()
                                         .await
-                                        .ok()
                                         .expect("error converting");                            
 let item_type_count = check_item(axum::extract::State(state.clone())).await;
 
