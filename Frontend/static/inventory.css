@@ -203,7 +203,14 @@ div#signup {
   width: 50%;
   display: block;
 }
+#pendApper{
+  display: none;
+}
 
+#deny{
+  border-bottom-left-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+}
 #Reason{
 
 

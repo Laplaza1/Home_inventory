@@ -15,7 +15,8 @@ document.addEventListener("DOMContentLoaded",(()=>
                     data.Pending_users.forEach(atomo =>
                         {
                             console.log(atomo)
-                            let pendapp = document.getElementById("pendApp").cloneNode(true)
+                            let pendapp = document.getElementById("pendApper").cloneNode(true)
+                            pendapp.id = "pendApp"
                             pendapp.className = "container"
                             pendapp.querySelector("#userName").textContent = atomo.username
                             pendapp.querySelector("#email").textContent = atomo.email
@@ -29,6 +30,39 @@ document.addEventListener("DOMContentLoaded",(()=>
                     console.log(data)
                     console.log(data.Item_count)
                     Object.entries(data.Item_count).forEach(item=>{console.log(item);console.log(yValues[xValues.indexOf(item[0])]);yValues[xValues.indexOf(item[0])]=item[1];console.log(yValues[xValues.indexOf(item[0])]);})
+                    document.querySelectorAll("#approve").forEach(async (a) => 
+                        {
+                            a.addEventListener("click",async (event) => 
+                                {
+                                    let body = {}
+                                console.log(Array.from(event.target.parentElement.children).forEach(child=>
+                                    {
+                                        if (child.textContent)
+                                            {
+                                                console.log(String(child.textContent).trim())
+                                                body[(String(child.id).toLowerCase())] = child.textContent
+                                                
+                                            }
+                                        
+                                        else
+                                            console.log(" is not real")
+                                    }))
+                                console.log(body)
+                                let  response = fetch(`https://home-inventory-bml1.onrender.com/user`,
+                                //let  response = fetch(`http://localhost:3000/user`, 
+                                    {
+                                        method:"POST",
+                                        credentials:"include",
+                                        headers: 
+                                            {
+                                                "Cookie":document.cookie,
+                                                "Content-Type": "application/json"
+                                            },
+                                        body: JSON.stringify(body)
+                                    })
+                                    console.log(response)
+                                            })
+                        })
                 } catch (error) {
                     console.log(error)
                 }
@@ -53,6 +87,9 @@ document.addEventListener("DOMContentLoaded",(()=>
                                 }
                         })
                 })
+           
+                
+            
 
 
 

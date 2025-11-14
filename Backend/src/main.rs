@@ -110,7 +110,8 @@ struct Usero {
     id: Option<ObjectId>, // Optional ObjectId for _id
     username: String,
     password:String,
-    status: i64
+    status: i64, 
+    home:String
 }
 
 impl Usero {
@@ -330,7 +331,7 @@ async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload
                                     .to_string().trim_matches('"').to_string();
 
     let phone_number = payload
-                                    .get("phone_number")
+                                    .get("phonenumber")
                                     .expect("coulding find phone number")
                                     .to_string().trim_matches('"').to_string();
     let home = payload
