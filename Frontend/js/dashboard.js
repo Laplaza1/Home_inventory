@@ -62,7 +62,13 @@ document.addEventListener("DOMContentLoaded",(()=>
                                             },
                                         body: JSON.stringify(body)
                                     })
-                                    console.log(response)
+                                Promise.allSettled(Promise.resolve(response)).then((result)=>{
+                                     if (result[0].status=="fulfilled"){
+                                        
+                                        location.reload()
+                                     }
+
+                                })
                                             })
                         })
                 } catch (error) {
