@@ -18,8 +18,8 @@ document.addEventListener("DOMContentLoaded",()=>{
             
             console.log(JSON.stringify(submittedForm))
 
-            let login = fetch("https://home-inventory-bml1.onrender.com/login", 
-            //let login = fetch("http://localhost:3000/login", 
+            //let login = fetch("https://home-inventory-bml1.onrender.com/login", 
+            let login = fetch("http://localhost:3000/login", 
                 {
                     method:"POST",
                     headers: 

@@ -150,9 +150,13 @@ nav ul a {
     background-color: lightgray;
 }
 
+
+
 #buttonDiv{
 
     display: ruby-text;
+    position: relative;
+    left: -13%;
 }
 
 #buttonSection{
