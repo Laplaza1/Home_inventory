@@ -507,6 +507,7 @@ body{background: #000000;color: #ffffff;}
    
 }
 #collapseButton {
+  width: auto;
   margin: 8%;
     float: right;
     justify-self: right;
