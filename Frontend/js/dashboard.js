@@ -62,11 +62,18 @@ document.addEventListener("DOMContentLoaded",(()=>
                                             },
                                         body: JSON.stringify(body)
                                     })
-                                Promise.allSettled(Promise.resolve(response)).then((result)=>{
+                                Promise.allSettled([Promise.resolve(response)]).then(async (result)=>{
+                                   const data = await result[0].value.json()
                                      if (result[0].status=="fulfilled"){
-                                        
-                                        location.reload()
+                                        console.log(data.Sucess)
+                                        //location.reload()
                                      }
+                                     if (result[0].status=="rejected")
+                                        {
+                                            console.log("rejected")
+                                            alert(result[0].reason)
+
+                                        }
 
                                 })
                                             })

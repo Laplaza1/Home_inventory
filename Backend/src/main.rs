@@ -19,7 +19,7 @@ use core::panic;
 use std::{any::{type_name, type_name_of_val}, collections::HashMap, env, hash::{DefaultHasher, Hash, Hasher}, time::{Duration, SystemTime}};
 
 use mongodb::{
-    bson::{doc, oid::ObjectId}, options::{ClientOptions,ResolverConfig}, Client, Collection
+    bson::{doc, oid::ObjectId}, options::{ClientOptions, FindOneOptions, ResolverConfig}, Client, Collection
 };
 use serde::{Serialize, Deserialize};
 
@@ -110,8 +110,8 @@ struct Usero {
     id: Option<ObjectId>, // Optional ObjectId for _id
     username: String,
     password:String,
-    status: i64, 
-    home:String
+    status: i64 
+    
 }
 
 impl Usero {
@@ -345,10 +345,10 @@ async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload
 
 
     let user:Usero =  Usero { id: None, username: username.clone(), password: password.clone(),..Default::default()};
-  
+    
     user_data.insert_one(&user, None).await.ok();
     let user_id:mongodb::Cursor<Usero> = user_data
-                                            .find(doc!{"username":username,"password":password},None)
+                                            .find(doc!{"username":username.clone(),"password":password.clone()},None)
                                             .await
                                             .map_err(|x|println!("Failed to create client: {}", x.kind))
                                             .expect("error trying to collect");
@@ -390,6 +390,9 @@ async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload
     println!("Created user info: {:?}",vec_found_userinfo);
 
 
+    let remove_pend:Collection<Pending> = state.client.database("test").collection("pending");
+
+    remove_pend.delete_one(doc! {"username":username.clone(),"password":password}, None).await.ok();
 
 
     return Json(json!({"Sucess":true})).into_response()
@@ -1077,7 +1080,7 @@ async fn send_notification(State(state):State<AppState>,Json(payload): Json<serd
 async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
     let data:Collection<Pending> = state.client.database("test").collection("pending");
 
-    println!("payload {:?}",payload);
+    println!("\npayload {:?} \n",payload);
 
     let username:String = match payload.get("username").expect("Couldnt find username"){
         Value::String(x)=>{x.to_string()},
@@ -1110,10 +1113,62 @@ async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_j
         _=>{return StatusCode::NOT_FOUND.into_response()}
     };
 
-    let body = Pending{username:username,email:email,home:home,password:password,phone_number:phone_number,reason:reason};
 
 
-    //data.insert_one(body, None).await.is_ok();
+    let body = Pending{username:username.clone(),email:email.clone(),home:home.clone(),password:password.clone(),phone_number:phone_number.clone(),reason:reason};
+
+    let pendingo:Vec<Document> = vec![
+        doc!{"username":username.clone()},
+        doc!{"email":email.clone()},
+        doc!{"home":home.clone()},
+        doc!{"phone_number":phone_number.clone()},
+
+    ]; 
+    let pend_filter = doc!{"$or":pendingo};
+    
+    let zy = data.count_documents(pend_filter,None).await.expect("Pending user with that info already exists");
+    
+    if zy>0
+        {
+
+            println!("\n {:?} Pending User documents with similar info exist \n",zy);
+            return (StatusCode::FOUND,Json(json!({"Failed":"Already exists"}))).into_response()
+
+        }
+    let user_info_or_conditions:Vec<Document> = vec![
+        doc! {"email":body.email.clone()},
+        doc! {"phone_number":body.phone_number.clone()},
+        doc!{"home":home.clone()},
+    ]; 
+    
+
+    let filter =doc! {"$or":user_info_or_conditions};
+
+
+    let user_info_state:Collection<UseroInfo> =  state.client.database("test").collection("user_info");
+    
+    let xy = user_info_state.count_documents(filter, None).await.expect("The email or phone already exists");
+    
+        if xy>0 {
+
+            println!("\n {:?} UserInfo documents with similar info exist\n",xy);
+            return (StatusCode::FOUND,Json(json!({"Failed":"Already exists"}))).into_response()
+        }
+
+    
+
+
+    let userexisto:Collection<Usero>= state.client.database("test").collection("users");
+    let yx = userexisto.count_documents(doc! {"username":username.clone()}, None).await.expect("Username already exists");
+    
+    if yx>0{
+
+        println!("\n {:?} User documents with similar info exist \n",yx);
+        return (StatusCode::FOUND,Json(json!({"Failed":"Already exists"}))).into_response()
+
+    }
+
+
 
     return Json(json!({"Sucess":data.insert_one(body, None).await.is_ok()})).into_response()
 

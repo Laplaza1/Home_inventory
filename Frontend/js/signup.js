@@ -23,11 +23,15 @@ document.addEventListener("DOMContentLoaded",(()=>
                                 "Content-Type": "application/json"
                             },
                         body: JSON.stringify(y)
-                    }).then((req,res)=>
-                        {
+                    }).then(async(req,res)=>
+                        {   
+                            const data = await req.json()
+                            
                             if (req.status!=200)
                                 {
-                                    console.log(req.status)
+                                    
+                                    alert(data.Failed)
+                                    location.reload()
                                 }
                         
                             else
