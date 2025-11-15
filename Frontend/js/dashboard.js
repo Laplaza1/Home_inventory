@@ -50,8 +50,8 @@ document.addEventListener("DOMContentLoaded",(()=>
                                     }))
                                 
                                 console.log(body,document.cook)
-                                //let  response = fetch(`https://home-inventory-bml1.onrender.com/user`,
-                                let  response = fetch(`http://localhost:3000/user`, 
+                                let  response = fetch(`https://home-inventory-bml1.onrender.com/user`,
+                                //let  response = fetch(`http://localhost:3000/user`, 
                                     {
                                         method:"POST",
                                         credentials:"include",

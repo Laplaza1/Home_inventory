@@ -14,8 +14,8 @@ document.addEventListener("DOMContentLoaded",(()=>
                         y[key] =value
                     })
                 
-                //let  response = fetch(`https://home-inventory-bml1.onrender.com/pending`,
-                let  response = fetch(`http://localhost:3000/pending`, 
+                let  response = fetch(`https://home-inventory-bml1.onrender.com/pending`,
+                //let  response = fetch(`http://localhost:3000/pending`, 
                     {
                         method:"POST",
                         headers: 
