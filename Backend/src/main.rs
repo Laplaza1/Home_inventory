@@ -12,7 +12,7 @@ use tower_http::cors::{CorsLayer, AllowOrigin,Any};
 
 // use rand::{Rng};
 use axum::{
-    body::Body, debug_handler, extract::{ws::close_code::STATUS, Path, State}, http::{header::{self, COOKIE, SET_COOKIE}, HeaderMap, HeaderValue, Method, Response, StatusCode}, response::{self, IntoResponse, Json}, routing::{delete, get, post, put}, Router
+    body::Body, debug_handler, extract::{ws::close_code::STATUS, Path, State}, http::{header::{self, COOKIE, SET_COOKIE}, HeaderMap, HeaderValue, Method, Response, StatusCode}, response::{self, IntoResponse, Json, Response}, routing::{delete, get, post, put}, Router
 };
 
 use core::panic;
@@ -515,7 +515,7 @@ async fn delete_user(){
 
 
 //login function
-async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Response<Body>{
+async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Response<()>{
     
     println!("\nPayload {:?}\n",payload);
     
@@ -589,11 +589,16 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
     curser.ok();
     println!("{:?}",x.id.expect("nothing").to_string());
 
-
+    let res = Response::builder()
+    .status(200)
+    .header(axum::http::header::SET_COOKIE,cookier.to_string())
+    .header(axum::http::header::SET_COOKIE, home_cookie.to_string())
+    .body(serde_json::to_string(&json!({"user_id":x.id.expect("nothing").to_string()})))
+    .unwrap();
 
 
     
-    return ([(axum::http::header::SET_COOKIE, cookier.to_string())],[(axum::http::header::SET_COOKIE, home_cookie.to_string())],Json(json!({"user_id":x.id.expect("nothing").to_string()}))).into_response()
+    return res
     
     
 
