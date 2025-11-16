@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded",()=>
                 console.log(search)
                 document.querySelectorAll("#nameElem").forEach((ne)=>
                     {
-                        if (ne.textContent.toLowerCase().startsWith(search.toLowerCase()))
+                        if (ne.textContent.toLowerCase().includes(search.toLowerCase()))
                             {
                                 
                                 ne.parentElement.style.display = "block"
