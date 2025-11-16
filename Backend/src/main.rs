@@ -601,7 +601,7 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
 
 
     
-    return (StatusCode::OK,headers,Json(json!({"user_id":x.id.expect("nothing").to_string()})))
+    return (StatusCode::OK,headerso,Json(json!({"user_id":x.id.expect("nothing").to_string()})))
     
     
 
