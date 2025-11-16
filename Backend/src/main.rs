@@ -12,7 +12,7 @@ use tower_http::cors::{CorsLayer, AllowOrigin,Any};
 
 // use rand::{Rng};
 use axum::{
-    body::Body, debug_handler, extract::{ws::close_code::STATUS, Path, State}, http::{header::{self, COOKIE, SET_COOKIE}, HeaderMap, HeaderValue, Method, Response, StatusCode}, response::{self, IntoResponse, Json, Response}, routing::{delete, get, post, put}, Router
+    body::Body, debug_handler, extract::{ws::close_code::STATUS, Path, State}, http::{header::{self, COOKIE, SET_COOKIE}, HeaderMap, HeaderValue, Method, Response, StatusCode}, response::{self, IntoResponse, Json}, routing::{delete, get, post, put}, Router
 };
 
 use core::panic;
@@ -515,7 +515,7 @@ async fn delete_user(){
 
 
 //login function
-async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Response<()>{
+async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Response<Body>{
     
     println!("\nPayload {:?}\n",payload);
     
@@ -563,11 +563,17 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
         cookier.set_path("/");
 
 
+    println!("Session_ID {:?}",cookier);  
+      
     let mut home_cookie = Cookie::new("hwt", y.home);
         home_cookie.set_expires(Expiration::DateTime(expires_at.into()));
         home_cookie.set_secure(true);
         home_cookie.set_same_site(SameSite::None);
         home_cookie.set_path("/");
+
+
+    println!("hwt {:?}",home_cookie);
+
 
     let mut cookier2 = Cookie::new("gsI", x.id.expect("nothing").to_string());
         cookier2.set_expires(Expiration::DateTime(expires_at.into()));
@@ -589,16 +595,12 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
     curser.ok();
     println!("{:?}",x.id.expect("nothing").to_string());
 
-    let res = Response::builder()
-    .status(200)
-    .header(axum::http::header::SET_COOKIE,cookier.to_string())
-    .header(axum::http::header::SET_COOKIE, home_cookie.to_string())
-    .body(serde_json::to_string(&json!({"user_id":x.id.expect("nothing").to_string()})))
-    .unwrap();
+    
+
 
 
     
-    return res
+    return ([(axum::http::header::SET_COOKIE, cookier.to_string())],[(axum::http::header::SET_COOKIE, home_cookie.to_string())],Json(json!({"user_id":x.id.expect("nothing").to_string()}))).into_response()
     
     
 
