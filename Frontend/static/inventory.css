@@ -588,6 +588,20 @@ body{background: #000000;color: #ffffff;}
   width: auto;
 }
 
+#Meats,#Spices,#Dairy,#Other{
+  display: contents;
+
+}
+#ingredients{
+  flex-direction: column;
+}
+
+
+#add,#Remove{
+
+  width: auto;
+}
+
 #removeStep{
   width: auto;
 }
