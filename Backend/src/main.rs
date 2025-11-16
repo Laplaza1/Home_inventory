@@ -562,7 +562,7 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
         cookier.set_same_site(SameSite::None);
         //cookier.set_http_only(true);
         cookier.set_path("/");
-    headerso.insert(SET_COOKIE, cookier.to_string().parse().unwrap());
+    headerso.append(SET_COOKIE, cookier.to_string().parse().unwrap());
 
     println!("Session_ID {:?}",cookier);  
 
@@ -571,7 +571,7 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
         home_cookie.set_secure(true);
         home_cookie.set_same_site(SameSite::None);
         home_cookie.set_path("/");
-    headerso.insert(SET_COOKIE, home_cookie.to_string().parse().unwrap());
+    headerso.append(SET_COOKIE, home_cookie.to_string().parse().unwrap());
 
     println!("hwt {:?}",home_cookie);
 
