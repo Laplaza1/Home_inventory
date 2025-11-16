@@ -515,7 +515,7 @@ async fn delete_user(){
 
 
 //login function
-async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Response<Body>{
+async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> impl IntoResponse{
     
     println!("\nPayload {:?}\n",payload);
     
@@ -545,6 +545,7 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
     let x =db.find_one(doc! {"username":username, "password":password}, None).await.unwrap().expect("failed finding one user");
     let y = user_info.find_one(doc! {"user_id":x.id}, None).await.unwrap().expect("failed finding one user info");
 
+    let mut headerso = HeaderMap::new();
     
     println!("{:?}",x.id);
     
@@ -561,7 +562,7 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
         cookier.set_same_site(SameSite::None);
         //cookier.set_http_only(true);
         cookier.set_path("/");
-
+    headerso.insert(SET_COOKIE, cookier.to_string().parse().unwrap());
 
     println!("Session_ID {:?}",cookier);  
 
@@ -570,7 +571,7 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
         home_cookie.set_secure(true);
         home_cookie.set_same_site(SameSite::None);
         home_cookie.set_path("/");
-
+    headerso.insert(SET_COOKIE, home_cookie.to_string().parse().unwrap());
 
     println!("hwt {:?}",home_cookie);
 
@@ -600,7 +601,7 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
 
 
     
-    return ([(axum::http::header::SET_COOKIE, cookier.to_string()),(axum::http::header::SET_COOKIE, home_cookie.to_string())],Json(json!({"user_id":x.id.expect("nothing").to_string()}))).into_response()
+    return (StatusCode::OK,headers,Json(json!({"user_id":x.id.expect("nothing").to_string()})))
     
     
 
