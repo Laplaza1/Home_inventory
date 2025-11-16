@@ -78,13 +78,7 @@ document.addEventListener("DOMContentLoaded",()=>
                             })
                     
        
-        document.getElementById('updateButton').addEventListener('click', function() {
-                // Example: Multiply the current red data by 1.5
-                console.log(myChart)
-                if (myChart.data.datasets.length > 1) {  // Optional: Prevent removing all datasets
-                    myChart.data.datasets.splice(2, 1);  // Remove dataset at index 2 (Blue)
-                    myChart.update();
-        };})
+        
 
 
     });})

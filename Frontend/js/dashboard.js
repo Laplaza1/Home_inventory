@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded",(()=>
             .then(data => 
             {
                 try {
+                    document.getElementById("loading-screen").style.display ="none"
                     let nm = 0
                     Object.values(data.Item_count).forEach(elem=>nm+=elem)
                     document.getElementById("itemNums").textContent = nm

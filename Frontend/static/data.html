@@ -17,9 +17,11 @@
           <div class="spinner">
           </div>
     </div>
-    <div id="main-content" style="display: none;" class="container">
-<canvas id="myChart" style="width:100%;height: 710px;"></canvas>
-</div>
+    <div id="main-content" style="display: none;" ></div>
+    <div class="container">
+          <canvas id="myChart" style="width:100%;height: 710px;"></canvas>
+    </div>
+
 <script>
     let myChart;
 const xValues = [100,200,300,400,500,600,700,800,900,1000];
@@ -41,6 +43,7 @@ myChart = new Chart(ctx, {
       borderColor: "red",
       pointRadius: 2,
       tension: 0.4,
+      color:"white"
     }]
   },
   options: {
@@ -51,32 +54,42 @@ myChart = new Chart(ctx, {
         text: 'Chart.js Line Chart',
         font: {
           size: 11
-        }
+        },
+        color:"white"
       },
       tooltip: {
         mode: 'index',
-        intersect: false
+        intersect: false,
+        color:"white"
       }
     },
     interaction: {
       mode: 'nearest',
-      intersect: false
+      intersect: false,
+      color:"white"
+
     },
     scales: {
       x: {
         display: true,
         title: {
           display: true,
-          text: 'Days'
-        }
+          text: 'Days',
+          color:"white"
+        },
+         ticks:{color:"white"},
+         grid:{color:"white"}
       },
       y: {
         display: true,
         title: {
           display: true,
-          text: 'Change'
-        }
-      }
+          text: 'Change',
+          color:"white"
+        },ticks:{ color:"white"},
+        grid:{color:"white"}
+      },
+      
     }
   }
 });
