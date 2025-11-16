@@ -595,7 +595,8 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
         );
     curser.ok();
     println!("{:?}",x.id.expect("nothing").to_string());
-
+    
+    println!("{:?}",headerso);
     
 
 
