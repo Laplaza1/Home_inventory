@@ -22,3 +22,4 @@ tower-http = { version = "0.5", features = ["cors"] }
 tower-cookies = "0.9"
 sha2="0.10"
 base64 = "0.22"
+hex = "0.4"

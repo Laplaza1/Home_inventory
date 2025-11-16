@@ -327,7 +327,20 @@ canvas{
 }
 
 #add{
+  width: auto;
   margin:1%
+}
+
+#Remove{
+  width: auto;
+
+}
+#submit{
+  width: auto;
+}
+
+#reset{
+  width: auto;
 }
 
 #item{

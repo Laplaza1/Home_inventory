@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded",()=>
                     })
                 document.querySelectorAll("#name").forEach((nr)=>
                     {
-                        if (nr.textContent.toLowerCase().startsWith(search.toLowerCase()))
+                        if (nr.textContent.toLowerCase().includes(search.toLowerCase()))
                             {
                                 
                                 nr.parentElement.style.display = "table-row"

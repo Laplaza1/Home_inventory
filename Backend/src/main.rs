@@ -32,6 +32,8 @@ use std::time::{Instant};
 use sha2::{Sha256,Digest};
 
 
+use hex;
+
 #[derive(Debug, Serialize, Deserialize,Clone)]
 struct UserContact{
 
@@ -115,6 +117,9 @@ struct Usero {
     status: i64 
     
 }
+
+
+
 
 impl Usero {
     fn check(self)->Result<Self,String>{
@@ -564,16 +569,21 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
         cookier.set_path("/");
     headerso.append(SET_COOKIE, cookier.to_string().parse().unwrap());
 
-    println!("Session_ID {:?}",cookier);  
+    println!("\n Session_ID {:?} \n",cookier);  
 
-    let mut home_cookie = Cookie::new("hwt", y.home);
+    let mut home_cookie = Cookie::new("hwt", y.home.clone());
         home_cookie.set_expires(Expiration::DateTime(expires_at.into()));
         home_cookie.set_secure(true);
         home_cookie.set_same_site(SameSite::None);
         home_cookie.set_path("/");
     headerso.append(SET_COOKIE, home_cookie.to_string().parse().unwrap());
 
-    println!("hwt {:?}",home_cookie);
+    let encoded = hex::encode(y.home.clone());
+
+    println!("\n home_cookie to hex: {:} \n",encoded);
+
+    println!("\n hex to home_cookie: {:?} \n ",String::from_utf8(hex::decode(encoded).ok().unwrap()));
+    println!("\n hwt {:?}\n",home_cookie);
 
 
     let mut cookier2 = Cookie::new("gsI", x.id.expect("nothing").to_string());
@@ -594,14 +604,16 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
             return (StatusCode::EXPECTATION_FAILED , format!("Failed to update logon {}", x)).into_response()
         );
     curser.ok();
-    println!("{:?}",x.id.expect("nothing").to_string());
+    println!("\n {:?} \n",x.id.expect("nothing").to_string());
     
-    println!("{:?}",headerso);
+    println!("\n {:?} \n",headerso);
     
 
 
 
     
+
+
     return (StatusCode::OK,headerso,Json(json!({"user_id":x.id.expect("nothing").to_string()})))
     
     
