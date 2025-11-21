@@ -503,6 +503,10 @@ body{background: #000000;color: #ffffff;}
   display: ruby;
 }
 
+#useros_table{
+  place-self: center;
+}
+
 
 #Description {
   text-wrap: auto;

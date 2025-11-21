@@ -24,7 +24,7 @@ use mongodb::{
 use serde::{Serialize, Deserialize};
 
 // for future additions
-use futures::{io::Cursor, TryStreamExt};
+use futures::{StreamExt, TryStreamExt, io::Cursor};
 use std::sync::Arc;
 
 //use tower::ServiceExt;
@@ -106,6 +106,13 @@ struct Item {
     home:String
 }
 
+#[derive(Debug, Serialize, Deserialize,Clone,Default)]
+struct MicroUsero {
+
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    id: Option<ObjectId>, 
+    username: String,
+}
 
 #[derive(Debug, Serialize, Deserialize,Clone,Default)]
 struct Usero {
@@ -1277,6 +1284,21 @@ async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Response<
     let data:Collection<Usero> = state.client
                                         .database("test")
                                         .collection("users");
+
+    let data1:Collection<MicroUsero> = state.client
+                                        .database("test")
+                                        .collection("users");
+
+    let users = data1
+                                    .find(None,None)
+                                    .await
+                                    .expect("error");
+    let vec_users:Vec<MicroUsero>=users
+                                    .try_collect::<Vec<MicroUsero>>()
+                                    .await
+                                    .ok()
+                                    .expect("error");                             
+
     let data_count= data
                                     .count_documents(None, None)
                                     .await
@@ -1306,7 +1328,14 @@ async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Response<
                                         .expect("error converting");                            
 let item_type_count = check_item(axum::extract::State(state.clone())).await;
 
-    return Json(json!({"Number_of_users":data_count,"Number_of_homes":home_count,"Item_count":item_type_count,"Pending_users":pending_data})).into_response();
+    return Json(json!({
+                        "Number_of_users":data_count,
+                        "Number_of_homes":home_count,
+                        "Item_count":item_type_count,
+                        "Pending_users":pending_data,
+                        "users":vec_users
+                        
+                        })).into_response();
 
 }
 
