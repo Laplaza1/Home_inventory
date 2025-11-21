@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded",(()=>
     {
+        
         let x = fetch("https://home-inventory-bml1.onrender.com/admin_data"
         //let  x = fetch(`http://localhost:3000/admin_data`
             ,{method:"Get",credentials:"include",headers:{"Cookie":document.cookie}})
@@ -7,6 +8,35 @@ document.addEventListener("DOMContentLoaded",(()=>
             .then(data => 
             {
                 try {
+                    let users = data.users
+                    console.log(users)
+                    let user_table = document.getElementById("useros_table")
+                    users.forEach((user)=>{
+                        
+                        let th = document.createElement("th")
+                        th.textContent = user.username
+                        let th_button = document.createElement("button")
+                        th_button.textContent= "Delete"
+                        th_button.value = user._id.$oid
+                        th_button.id ="delete"
+                        th_button.type = "button"
+                        let tr = document.createElement("tr")
+                        tr.appendChild(th)
+                        tr.appendChild(th_button)
+                        user_table.appendChild(tr)
+
+                    })
+                    document.querySelectorAll("#delete").forEach(async (delte_button)=>
+                            {
+                                delte_button.addEventListener("click",(event)=>
+                                    {
+                                        fetch(`https://home-inventory-bml1.onrender.com/user/${event.target.value}`
+                                            //`http://localhost:3000/user/${event.target.value}`
+                                    
+                                            ,{method:"Delete",credentials:"include",headers:{"Cookie":document.cookie}})
+                                        })
+                            })
+
                     document.getElementById("loading-screen").style.display ="none"
                     let nm = 0
                     Object.values(data.Item_count).forEach(elem=>nm+=elem)
@@ -84,7 +114,8 @@ document.addEventListener("DOMContentLoaded",(()=>
                 }
                 myChart.update()
             })
-         document.querySelectorAll("#collapse_button").forEach(async (e)=>
+        
+        document.querySelectorAll("#collapse_button").forEach(async (e)=>
                 {
                     console.log(e)
                     e.addEventListener("click",async (event)=>
