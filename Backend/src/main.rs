@@ -511,7 +511,18 @@ async fn change_user(headers:HeaderMap,State(state):State<AppState>, Json(payloa
     return Ok("If you're reading this then ya changed information on user".to_string())
 }
 
-async fn delete_user(){
+async fn delete_user(headers:HeaderMap,State(state):State<AppState>,Path(id): Path<String>)->Response<Body>{
+
+    let sol = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
+    if sol==false {
+
+        return (StatusCode::FORBIDDEN,"User isnt logged in").into_response()
+    }
+
+    let data:Collection<Document> = state.client.database("test").collection("users");
+    let _ =data.delete_one(doc! {"_id":ObjectId::parse_str(id).ok()}, None).await;
+
+    return Json(json!({"success":true})).into_response()
 
 }
 
