@@ -1,12 +1,15 @@
 use axum_extra::extract::{cookie,CookieJar};
+use axum_governor::GovernorLayer;
 use bson::{DateTime, Decimal128, Document};
 use base64::{engine::general_purpose, Engine as _};
 use ::cookie::{Cookie, Expiration, SameSite};
+use real::RealIpLayer;
 // use chrono::{Utc};
 use serde_json::{
     Value,
     json
 };
+use lazy_limit::{init_rate_limiter, Duration as dur, RuleConfig};
 use reqwest;
 use tower_http::cors::{CorsLayer, AllowOrigin,Any};
 
@@ -204,7 +207,12 @@ fn check_token(token:CookieJar,key:&str)->bool
 
 #[tokio::main]
 async fn main() {
-
+    init_rate_limiter!(
+        default: RuleConfig::new(dur::seconds(1), 5), // 5 req/s globally
+        routes: [
+            ("/api/special", RuleConfig::new(dur::seconds(1), 10)),
+        ]
+    ).await;
     let origins = vec![
         HeaderValue::from_static("http://localhost:3000"),
         HeaderValue::from_static("http://localhost"),
@@ -263,7 +271,13 @@ async fn main() {
     .route("/graph/{id}",get(pull_specific_data)).with_state(state.clone())
     .route("/admin_data",get(general_data)).with_state(state.clone())
 
-    .layer(cors);
+    .route("/web_socket", get(websocket_handler))
+
+
+    .layer(cors)
+    .layer(tower::ServiceBuilder::new()
+            .layer(RealIpLayer::default()) // Extracts the real IP
+            .layer(GovernorLayer::default()));
 
      let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
@@ -1131,6 +1145,15 @@ async fn test()->Result<Json<Value>,(StatusCode,String)>{
 }
 
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1160,3 +1183,81 @@ async fn handle_client()->Client{
 }
 
 
+use axum::extract::ws::CloseFrame;
+use axum::{
+    extract::ws::{Message as msg,WebSocket, WebSocketUpgrade},
+};
+
+// WebSocketUpgrade: Extractor for establishing WebSocket connections.
+async fn websocket_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
+    // Finalize upgrading the connection and call the provided callback with the stream.
+    ws.on_failed_upgrade(|error| println!("Error upgrading websocket: {}", error))
+        .on_upgrade(handle_socket)
+}
+
+// WebSocket: A stream of WebSocket messages.
+async fn handle_socket(mut socket: WebSocket) {
+    // Returns `None` if the stream has closed.
+    while let Some(msg) = socket.recv().await {
+        if let Ok(msg) = msg {
+            match msg {
+                msg::Text(utf8_bytes) => {
+                    println!("Text received: {}", utf8_bytes);
+                    let result = socket
+                        .send(msg::Text(
+                            format!("Echo back text: {}", utf8_bytes).into(),
+                        ))
+                        .await;
+                    if let Err(error) = result {
+                        println!("Error sending: {}", error);
+                        send_close_message(socket, 1011, &format!("Error occured: {}", error))
+                            .await;
+                        break;
+                    }
+                }
+                msg::Binary(bytes) => {
+                    println!("Received bytes of length: {}", bytes.len());
+                    let result = socket
+                        .send(msg::Text(
+                            format!("Received bytes of length: {}", bytes.len()).into(),
+                        ))
+                        .await;
+                    if let Err(error) = result {
+                        println!("Error sending: {}", error);
+                        send_close_message(socket, 1011, &format!("Error occured: {}", error))
+                            .await;
+                        break;
+                    }
+                }
+                // Close, Ping, Pong will be handled automatically
+                // Message::Close
+                // After receiving a close frame, axum will automatically respond with a close frame if necessary (you do not have to deal with this yourself).
+                // After sending a close frame, you may still read messages, but attempts to send another message will error.
+                // Since no further messages will be received, you may either do nothing or explicitly drop the connection.
+                _ => {}
+            }
+        } else {
+            let error = msg.err().unwrap();
+            println!("Error receiving message: {:?}", error);
+            send_close_message(socket, 1011, &format!("Error occured: {}", error)).await;
+            break;
+        }
+    }
+}
+
+// We MAY “uncleanly” close a WebSocket connection at any time by simply dropping the WebSocket, ie: Break out of the recv loop.
+// However, you may also use the graceful closing protocol, in which
+// peer A sends a close frame, and does not send any further messages;
+// peer B responds with a close frame, and does not send any further messages;
+// peer A processes the remaining messages sent by peer B, before finally
+// both peers close the connection.
+//
+// Close Code: https://kapeli.com/cheat_sheets/WebSocket_Status_Codes.docset/Contents/Resources/Documents/index
+async fn send_close_message(mut socket: WebSocket, code: u16, reason: &str) {
+    _ = socket
+        .send(msg::Close(Some(CloseFrame {
+            code: code,
+            reason: reason.into(),
+        })))
+        .await;
+}
