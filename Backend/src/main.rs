@@ -347,7 +347,6 @@ async fn main() {
     .route("/graph/{id}",get(pull_specific_data)).with_state(state.clone())
     .route("/admin_data",get(general_data)).with_state(state.clone())
 
-    .route("/web_socket", get(websocket_handler))
 
 
     .layer(cors)
