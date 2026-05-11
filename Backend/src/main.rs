@@ -22,17 +22,20 @@ use core::panic;
 use std::{any::{type_name, type_name_of_val}, collections::HashMap, env, hash::{DefaultHasher, Hash, Hasher}, time::{Duration, SystemTime}};
 
 use mongodb::{
-    bson::{doc, oid::ObjectId}, options::{ClientOptions,ResolverConfig}, Client, Collection
+    bson::{doc, oid::ObjectId}, options::{ClientOptions, FindOneOptions, ResolverConfig}, Client, Collection
 };
 use serde::{Serialize, Deserialize};
 
 // for future additions
-use futures::{io::Cursor, TryStreamExt};
+use futures::{StreamExt, TryStreamExt, io::Cursor};
 use std::sync::Arc;
 
 //use tower::ServiceExt;
 use std::time::{Instant};
 use sha2::{Sha256,Digest};
+
+
+use hex;
 
 #[derive(Debug, Serialize, Deserialize,Clone)]
 struct UserContact{
@@ -102,9 +105,17 @@ struct Item {
     quantity: i64,
     method_measure:String,
     unit_price: Decimal128,
-    date: DateTime
+    date: DateTime,
+    home:String
 }
 
+#[derive(Debug, Serialize, Deserialize,Clone,Default)]
+struct MicroUsero {
+
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    id: Option<ObjectId>, 
+    username: String,
+}
 
 #[derive(Debug, Serialize, Deserialize,Clone,Default)]
 struct Usero {
@@ -113,8 +124,12 @@ struct Usero {
     id: Option<ObjectId>, // Optional ObjectId for _id
     username: String,
     password:String,
-    status: i64
+    status: i64 
+    
 }
+
+
+
 
 impl Usero {
     fn check(self)->Result<Self,String>{
@@ -147,6 +162,17 @@ struct UseroInfo{
         phone_number:String
 }
 
+
+#[derive(Debug, Serialize, Deserialize,Clone,Default)]
+struct Pending{
+    username:String,
+    email:String,
+    home:String,
+    password:String,
+    phone_number:String,
+    reason:String
+
+}
 
 
 
@@ -182,6 +208,40 @@ fn create_token(value1:String,value2:String)->String{
 
 }
 
+fn pull_token(header:CookieJar,key:&str)->String{
+
+    return header.get(key).expect("Error pulling token").value().to_string()
+
+}
+async fn find_home(token:String,state:AppState)->String{
+    
+
+    let start = Instant::now();
+
+    
+   
+    let user_info:Collection<UseroInfo> = state.client.database("test").collection("user_info");
+    let found_user_info:UseroInfo = user_info
+                                            .find_one(doc! {"user_id":
+                                                                            ObjectId::parse_str(
+                                                                                                    token.as_str()
+                                                                                                )
+                                                                                                .expect("Failed to parse string")
+                                                                    }, None)
+                                            .await
+                                            .ok()
+                                            .expect("error the first one")
+                                            .expect("error the second time for some reason");
+
+    let duration = start.elapsed();
+ 
+    println!("find_home took {:?} to complete",duration);
+    
+    return found_user_info.home
+
+}
+
+
 
 
 fn check_token(token:CookieJar,key:&str)->bool 
@@ -203,6 +263,22 @@ fn check_token(token:CookieJar,key:&str)->bool
     }
 
 
+
+
+
+async fn check_item(State(state):State<AppState>)->HashMap<&'static str, u64>{
+
+    let item_data:Collection<Item> = state.client.database("test").collection("item");
+    let item_name = ["Meat","Spice","Vegetable","Fruit","Dairy","Cleaning","Animal"];
+    let mut item_counter= HashMap::new();
+    for i in item_name{
+        let data = item_data.count_documents(doc! {"category":doc! { "$elemMatch": { "$eq": i } }}, None).await.ok().expect("couldn't proerly find element");
+        item_counter.insert(i, data);
+    }
+
+    return item_counter
+
+}
 
 
 #[tokio::main]
@@ -291,13 +367,17 @@ async fn main() {
 
 async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
     
+    let sol = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
+    if sol==false {
 
+        return (StatusCode::FORBIDDEN,"User isnt logged in").into_response()
+    }
 
 
     let user_data:Collection<Usero> = state.clone().client.database("test").collection("users");
     let user_info:Collection<UseroInfo> =state.client.database("test").collection("user_info") ;
 
-    
+    println!{"Payload: {:?}",payload}
 
     let username = payload
                                 .get("username")
@@ -314,19 +394,23 @@ async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload
                                     .to_string().trim_matches('"').to_string();
 
     let phone_number = payload
-                                    .get("phone_number")
+                                    .get("phonenumber")
                                     .expect("coulding find phone number")
                                     .to_string().trim_matches('"').to_string();
+    let home = payload
+                                    .get("home")
+                                    .expect("coulding find home")
+                                    .to_string().trim_matches('"').to_string();
 
-
+    
 
 
 
     let user:Usero =  Usero { id: None, username: username.clone(), password: password.clone(),..Default::default()};
-  
+    
     user_data.insert_one(&user, None).await.ok();
     let user_id:mongodb::Cursor<Usero> = user_data
-                                            .find(doc!{"username":username,"password":password},None)
+                                            .find(doc!{"username":username.clone(),"password":password.clone()},None)
                                             .await
                                             .map_err(|x|println!("Failed to create client: {}", x.kind))
                                             .expect("error trying to collect");
@@ -341,13 +425,25 @@ async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload
     println!("Created user: {:?}",convert_user_id);
     
 
-    let user_info1:UseroInfo = UseroInfo{ user_id: convert_user_id[0].id, access: AccessLevel::User, home: "Home4".to_string(), email:email.clone(), phone_number:phone_number.clone() };
-    user_info.insert_one(&user_info1, None).await.ok();
+    let user_info1:UseroInfo = UseroInfo{ 
+                                            user_id: convert_user_id[0].id,
+                                            access: AccessLevel::User,
+                                            home: home,
+                                            email:email.clone(),
+                                            phone_number:phone_number.clone() 
+                                        };
+    
+    
+    user_info
+        .insert_one(&user_info1, None)
+        .await
+        .ok();
     let found_user_info = user_info
                                                                     .find(doc! {"email":email,"phone_number":phone_number}, None)
                                                                     .await
                                                                     .map_err(|x|println!("Failed to create user info : {}", x.kind))
                                                                     .expect("error trying to collect");
+    
     let vec_found_userinfo:Vec<UseroInfo> =found_user_info
                                                     .try_collect()
                                                     .await
@@ -356,6 +452,9 @@ async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(payload
     println!("Created user info: {:?}",vec_found_userinfo);
 
 
+    let remove_pend:Collection<Pending> = state.client.database("test").collection("pending");
+
+    remove_pend.delete_one(doc! {"username":username.clone(),"password":password}, None).await.ok();
 
 
     return Json(json!({"Sucess":true})).into_response()
@@ -426,7 +525,18 @@ async fn change_user(headers:HeaderMap,State(state):State<AppState>, Json(payloa
     return Ok("If you're reading this then ya changed information on user".to_string())
 }
 
-async fn delete_user(){
+async fn delete_user(headers:HeaderMap,State(state):State<AppState>,Path(id): Path<String>)->Response<Body>{
+
+    let sol = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
+    if sol==false {
+
+        return (StatusCode::FORBIDDEN,"User isnt logged in").into_response()
+    }
+
+    let data:Collection<Document> = state.client.database("test").collection("users");
+    let _ =data.delete_one(doc! {"_id":ObjectId::parse_str(id).ok()}, None).await;
+
+    return Json(json!({"success":true})).into_response()
 
 }
 
@@ -442,14 +552,14 @@ async fn delete_user(){
 
 
 //login function
-async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> Response<Body>{
+async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)-> impl IntoResponse{
     
     println!("\nPayload {:?}\n",payload);
     
     println!("\nHeader {:?}\n",headers);
     
     let db:Collection<Usero> =state.client.database("test").collection("users");
-    
+    let user_info:Collection<UseroInfo> = state.client.database("test").collection("user_info");
     // Checks db
     // println!("\n DB: {:?} \n",db);
 
@@ -469,35 +579,46 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
     // println!("\n{:?},{:?}\n",username,password);
     let token =create_token(username.clone(), password.clone());
 
-    let x =db.find(doc! {"username":username, "password":password}, None).await.unwrap();
-    
+    let x =db.find_one(doc! {"username":username, "password":password}, None).await.unwrap().expect("failed finding one user");
+    let y = user_info.find_one(doc! {"user_id":x.id}, None).await.unwrap().expect("failed finding one user info");
 
-    let users:Vec<Usero> =x
-                                .try_collect()
-                                .await
-                                //.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind)).into_response()});
-                                .expect("error");
-    println!("{:?}",users[0].id);
+    let mut headerso = HeaderMap::new();
+    
+    println!("{:?}",x.id);
     
 
 
-    if users.len()<1 {
-        println!("Len of users are greater then 0{:?}",users.len()<1);
-        return (StatusCode::NOT_FOUND,"Not Found".to_string()).into_response();
-    };
+    
     let expires_in = Duration::from_secs(7 * 24 * 60 * 60);
     let expires_at = SystemTime::now() + expires_in;
 
     
-   let mut cookier = Cookie::new("Session_ID", "cookieSet");
+   let mut cookier = Cookie::new("Session_ID", x.id.expect("error converting to string").to_string());
         cookier.set_expires(Expiration::DateTime(expires_at.into()));
         cookier.set_secure(true);
         cookier.set_same_site(SameSite::None);
         //cookier.set_http_only(true);
         cookier.set_path("/");
+    headerso.append(SET_COOKIE, cookier.to_string().parse().unwrap());
+
+    println!("\n Session_ID {:?} \n",cookier);  
+
+    let mut home_cookie = Cookie::new("hwt", y.home.clone());
+        home_cookie.set_expires(Expiration::DateTime(expires_at.into()));
+        home_cookie.set_secure(true);
+        home_cookie.set_same_site(SameSite::None);
+        home_cookie.set_path("/");
+    headerso.append(SET_COOKIE, home_cookie.to_string().parse().unwrap());
+
+    let encoded = hex::encode(y.home.clone());
+
+    println!("\n home_cookie to hex: {:} \n",encoded);
+
+    println!("\n hex to home_cookie: {:?} \n ",String::from_utf8(hex::decode(encoded).ok().unwrap()));
+    println!("\n hwt {:?}\n",home_cookie);
 
 
-    let mut cookier2 = Cookie::new("gsI", users[0].id.expect("nothing").to_string());
+    let mut cookier2 = Cookie::new("gsI", x.id.expect("nothing").to_string());
         cookier2.set_expires(Expiration::DateTime(expires_at.into()));
         cookier2.set_secure(true);
         cookier2.set_same_site(SameSite::None);
@@ -505,8 +626,8 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
 
 
 
-    let new_item = doc! {"$set":{"token":token}};
-    let filter = doc! {"_id":users[0].id};
+    let new_item = doc! {"$set":{"token":x.id}};
+    let filter = doc! {"_id":x.id};
     let user: Collection<User> = state.client.database("test").collection("users");
     let curser = user
         .update_one(filter,new_item,None)
@@ -515,13 +636,17 @@ async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload): Jso
             return (StatusCode::EXPECTATION_FAILED , format!("Failed to update logon {}", x)).into_response()
         );
     curser.ok();
-    println!("{:?}",users[0].id.expect("nothing").to_string());
-
+    println!("\n {:?} \n",x.id.expect("nothing").to_string());
+    
+    println!("\n {:?} \n",headerso);
+    
 
 
 
     
-    return ([(axum::http::header::SET_COOKIE, cookier.to_string())],Json(json!({"user_id":users[0].id.expect("nothing").to_string()}))).into_response()
+
+
+    return (StatusCode::OK,headerso,Json(json!({"user_id":x.id.expect("nothing").to_string()})))
     
     
 
@@ -564,19 +689,25 @@ async fn show_cookies(jar: CookieJar) -> impl IntoResponse {
 #[axum::debug_handler]
 async fn get_item(State(state):State<AppState>,headers:HeaderMap)->Response<Body>{
     println!("Headers{:?}",&headers.clone());
-    let sol = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
+    let ab =pull_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
+    let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
+    let sol = ab.len()>0;
     println!("Token exists {}",sol);
     if sol==false {
 
         return (StatusCode::FORBIDDEN,"User isnt logged in").into_response()
     }
+    
+    
+                                            
+
     let start = Instant::now();
 
     let item: Collection<Item> = state.client.database("test").collection("item");
 
-
+    //let x = find_home(ab, state).await;
     let curser = item
-        .find(None,None)
+        .find(doc! {"home":home},None)
         .await
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x.kind)))
         .unwrap();
@@ -630,9 +761,10 @@ async fn specific_item()->Result<Json<Vec<Item>>,(StatusCode,String)>{
 
 
 
-async fn insert_item(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>
+async fn insert_item(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>
 
 {
+    let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
     let item: Collection<Document> = state
                                             .client
                                             .database("test")
@@ -685,7 +817,7 @@ async fn insert_item(State(state):State<AppState>,Json(payload): Json<serde_json
         _ =>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
     };
 
-    let newo_item :Document= doc! {"item_name":item_name,"category":category,"quantity":quantity,"method_measure":method_measure,"unit_price":unit_price,"date":date};
+    let newo_item :Document= doc! {"item_name":item_name,"category":category,"quantity":quantity,"method_measure":method_measure,"unit_price":unit_price,"date":date,"home":home};
     
     
     
@@ -705,11 +837,11 @@ async fn insert_item(State(state):State<AppState>,Json(payload): Json<serde_json
 
 }
 
-async fn change_item(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
+async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
 
     
     println!("{:#?}",payload);
-    
+    let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
     let item_id: String=match payload.get("id") {
         Some(Value::String(x))=>{x.to_string()},
         _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))} 
@@ -793,8 +925,8 @@ async fn change_item(State(state):State<AppState>,Json(payload): Json<serde_json
 
 }
 
-async fn delete_item(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
-
+async fn delete_item(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
+    let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
     let item_id: String= match payload.get("id")
         {
             Some(Value::String(x))=>{x.to_string()},
@@ -818,7 +950,8 @@ async fn delete_item(State(state):State<AppState>,Json(payload): Json<serde_json
 
 }
 
-async fn pull_data(State(state):State<AppState>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+async fn pull_data(headers:HeaderMap,State(state):State<AppState>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+    let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
     let time = Instant::now();
     let data:Collection<Document> = state.client.database("test").collection("change");
     let curser = data
@@ -838,8 +971,9 @@ async fn pull_data(State(state):State<AppState>)->Result<Json<Vec<Document>>,(St
 
 
 
-async fn pull_specific_data(Path(id): Path<String>,State(state):State<AppState>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+async fn pull_specific_data(headers:HeaderMap,Path(id): Path<String>,State(state):State<AppState>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
     
+    let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
     let start = Instant::now();
     let _object_id = ObjectId::parse_str(id.as_str()).map_err(|x|(StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", x))).ok();
     let find_item = doc!{"item":id};
@@ -863,9 +997,9 @@ async fn pull_specific_data(Path(id): Path<String>,State(state):State<AppState>)
 
 //Recipe
 
-async fn create_recipe(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>
+async fn create_recipe(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>
         {
-
+            let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
             println!("{:#?}",payload);
             let steps:Vec<String> = match payload.get("steps") 
             {
@@ -927,7 +1061,8 @@ async fn create_recipe(State(state):State<AppState>,Json(payload): Json<serde_js
                 },
                 "steps": steps,
                 "time_to_cook":cooktime,
-                "Description":description
+                "Description":description,
+                "home":home
                                             
             };
                     
@@ -949,6 +1084,7 @@ async fn create_recipe(State(state):State<AppState>,Json(payload): Json<serde_js
 
 async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result<Json<Vec<Document>>,(StatusCode,String)>{
 
+    let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
     println!("Headers{:?}",&headers.clone());
     let sol = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
     println!("Token exists {}",sol);
@@ -961,7 +1097,7 @@ async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result<Jso
                                             .collection("recipe");
     let time =Instant::now();
     let curser = data
-        .find(None,None)
+        .find(doc! {"home":home},None)
         .await
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create curser: {}", x.kind)))
         .unwrap();
@@ -982,8 +1118,9 @@ async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result<Jso
 
 
 
-async fn send_notification(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
+async fn send_notification(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
 
+    let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
     let raw = payload.get("message").expect("Couldn't get message").to_string();
     let messageo = raw.replace("\\n", "\n");
 
@@ -1039,10 +1176,11 @@ async fn send_notification(State(state):State<AppState>,Json(payload): Json<serd
 // }
 
 
-async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
-    let data = state.client.database("test").collection("pending");
+async fn create_pending(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
+    
+    let data:Collection<Pending> = state.client.database("test").collection("pending");
 
-    println!("payload {:?}",payload);
+    println!("\npayload {:?} \n",payload);
 
     let username:String = match payload.get("username").expect("Couldnt find username"){
         Value::String(x)=>{x.to_string()},
@@ -1054,6 +1192,10 @@ async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_j
         _=>{return StatusCode::NOT_FOUND.into_response()}
     };
     let password = match payload.get("password").expect("couldnt find Password"){
+        Value::String(x)=>{x.to_string()},
+        _=>{return StatusCode::NOT_FOUND.into_response()}
+    };
+    let home = match payload.get("home").expect("couldnt find home"){
         Value::String(x)=>{x.to_string()},
         _=>{return StatusCode::NOT_FOUND.into_response()}
     };
@@ -1071,10 +1213,62 @@ async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_j
         _=>{return StatusCode::NOT_FOUND.into_response()}
     };
 
-    let body = doc!{"username":username,"email":email,"password":password,"phone_number":phone_number,"reason":reason};
 
 
-    //data.insert_one(body, None).await.is_ok();
+    let body = Pending{username:username.clone(),email:email.clone(),home:home.clone(),password:password.clone(),phone_number:phone_number.clone(),reason:reason};
+
+    let pendingo:Vec<Document> = vec![
+        doc!{"username":username.clone()},
+        doc!{"email":email.clone()},
+        doc!{"home":home.clone()},
+        doc!{"phone_number":phone_number.clone()},
+
+    ]; 
+    let pend_filter = doc!{"$or":pendingo};
+    
+    let zy = data.count_documents(pend_filter,None).await.expect("Pending user with that info already exists");
+    
+    if zy>0
+        {
+
+            println!("\n {:?} Pending User documents with similar info exist \n",zy);
+            return (StatusCode::FOUND,Json(json!({"Failed":"Already exists"}))).into_response()
+
+        }
+    let user_info_or_conditions:Vec<Document> = vec![
+        doc! {"email":body.email.clone()},
+        doc! {"phone_number":body.phone_number.clone()},
+        doc!{"home":home.clone()},
+    ]; 
+    
+
+    let filter =doc! {"$or":user_info_or_conditions};
+
+
+    let user_info_state:Collection<UseroInfo> =  state.client.database("test").collection("user_info");
+    
+    let xy = user_info_state.count_documents(filter, None).await.expect("The email or phone already exists");
+    
+        if xy>0 {
+
+            println!("\n {:?} UserInfo documents with similar info exist\n",xy);
+            return (StatusCode::FOUND,Json(json!({"Failed":"Already exists"}))).into_response()
+        }
+
+    
+
+
+    let userexisto:Collection<Usero>= state.client.database("test").collection("users");
+    let yx = userexisto.count_documents(doc! {"username":username.clone()}, None).await.expect("Username already exists");
+    
+    if yx>0{
+
+        println!("\n {:?} User documents with similar info exist \n",yx);
+        return (StatusCode::FOUND,Json(json!({"Failed":"Already exists"}))).into_response()
+
+    }
+
+
 
     return Json(json!({"Sucess":data.insert_one(body, None).await.is_ok()})).into_response()
 
@@ -1105,12 +1299,31 @@ async fn create_pending(State(state):State<AppState>,Json(payload): Json<serde_j
 // }
 
 
-async fn general_data(State(state):State<AppState>)->Response<Body>{
+async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Response<Body>{
+    let sol = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
+    if sol==false {
 
+        return (StatusCode::FORBIDDEN,"User isnt logged in").into_response()
+    }
 
     let data:Collection<Usero> = state.client
                                         .database("test")
                                         .collection("users");
+
+    let data1:Collection<MicroUsero> = state.client
+                                        .database("test")
+                                        .collection("users");
+
+    let users = data1
+                                    .find(None,None)
+                                    .await
+                                    .expect("error");
+    let vec_users:Vec<MicroUsero>=users
+                                    .try_collect::<Vec<MicroUsero>>()
+                                    .await
+                                    .ok()
+                                    .expect("error");                             
+
     let data_count= data
                                     .count_documents(None, None)
                                     .await
@@ -1123,14 +1336,31 @@ async fn general_data(State(state):State<AppState>)->Response<Body>{
                                 .distinct("home", None,None)
                                 .await
                                 .ok()
-                                .iter()
+                                .expect("error finding homes")
                                 .len();
-    
 
                                 
+    
+    
+    let pending:Collection<Pending> = state.client.database("test").collection("pending");
 
+    let pending_users = pending.find(None,None).await.ok().expect("Error");
+    
 
-    return Json(json!({"number of users":data_count,"Number of homes":home_count})).into_response();
+    let pending_data:Vec<Pending> =pending_users
+                                        .try_collect::<Vec<Pending>>()
+                                        .await
+                                        .expect("error converting");                            
+let item_type_count = check_item(axum::extract::State(state.clone())).await;
+
+    return Json(json!({
+                        "Number_of_users":data_count,
+                        "Number_of_homes":home_count,
+                        "Item_count":item_type_count,
+                        "Pending_users":pending_data,
+                        "users":vec_users
+                        
+                        })).into_response();
 
 }
 

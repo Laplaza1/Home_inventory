@@ -26,3 +26,5 @@ anyhow = "1.0.102"
 axum-governor = "1.0.3"
 lazy-limit = "1.0.3"
 real = { version = "0.1.4", features = ["axum"] }
+
+hex = "0.4"

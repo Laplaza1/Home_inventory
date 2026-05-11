@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded",()=>
                 console.log(search)
                 document.querySelectorAll("#nameElem").forEach((ne)=>
                     {
-                        if (ne.textContent.toLowerCase().startsWith(search.toLowerCase()))
+                        if (ne.textContent.toLowerCase().includes(search.toLowerCase()))
                             {
                                 
                                 ne.parentElement.style.display = "block"
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded",()=>
                     })
                 document.querySelectorAll("#name").forEach((nr)=>
                     {
-                        if (nr.textContent.toLowerCase().startsWith(search.toLowerCase()))
+                        if (nr.textContent.toLowerCase().includes(search.toLowerCase()))
                             {
                                 
                                 nr.parentElement.style.display = "table-row"
@@ -248,7 +248,12 @@ document.addEventListener("DOMContentLoaded",()=>
         document.querySelectorAll(".toggle-button.selected").forEach(elem=>{elem.className= "toggle-button"})
         console.log("Tried to close")    
         })
-        let x = fetch("https://home-inventory-bml1.onrender.com/item",{method:"Get",credentials:"include",headers:{"Cookie":document.cookie}})
+
+        //let x = fetch("http://localhost:3000/item"
+        let x = fetch("https://home-inventory-bml1.onrender.com/item"
+            
+            
+            ,{method:"Get",credentials:"include",headers:{"Cookie":document.cookie}})
         .then(Response =>Response.json())
         .then(data => 
             {

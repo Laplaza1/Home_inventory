@@ -150,9 +150,13 @@ nav ul a {
     background-color: lightgray;
 }
 
+
+
 #buttonDiv{
 
     display: ruby-text;
+    position: relative;
+    left: -13%;
 }
 
 #buttonSection{
@@ -194,7 +198,23 @@ div#signup {
 #formItem{
  margin:1%;
 }
+#pendApps{
+  display: None;
+}
 
+#pendApp{
+  justify-self: center;
+  width: 50%;
+  display: block;
+}
+#pendApper{
+  display: none;
+}
+
+#deny{
+  border-bottom-left-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+}
 #Reason{
 
 
@@ -307,12 +327,31 @@ canvas{
 }
 
 #add{
+  width: auto;
   margin:1%
+}
+
+#Remove{
+  width: auto;
+
+}
+#submit{
+  width: auto;
+}
+
+#reset{
+  width: auto;
 }
 
 #item{
   inline-size: max-content;
 }
+
+#closeButton{
+  width: auto;
+}
+
+
 
 label#stepLabel
  {
@@ -464,6 +503,10 @@ body{background: #000000;color: #ffffff;}
   display: ruby;
 }
 
+#useros_table{
+  place-self: center;
+}
+
 
 #Description {
   text-wrap: auto;
@@ -487,6 +530,7 @@ body{background: #000000;color: #ffffff;}
    
 }
 #collapseButton {
+  width: auto;
   margin: 8%;
     float: right;
     justify-self: right;
@@ -543,7 +587,31 @@ body{background: #000000;color: #ffffff;}
   span {
     font-size: larger;
 }
+
+#addStep{
+  width: auto;
+}
+
+#Meats,#Spices,#Dairy,#Other{
+  display: contents;
+
+}
+#ingredients{
+  flex-direction: column;
+}
+
+
+#add,#Remove{
+
+  width: auto;
+}
+
+#removeStep{
+  width: auto;
+}
+
   #buttonDiv {
+    left:0%;
         width: 100%;
         display: flex;
         flex-direction: column;

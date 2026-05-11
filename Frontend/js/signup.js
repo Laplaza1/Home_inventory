@@ -14,8 +14,8 @@ document.addEventListener("DOMContentLoaded",(()=>
                         y[key] =value
                     })
                 
-                //let  response = fetch(`https://home-inventory-bml1.onrender.com/pending`,
-                let  response = fetch(`http://localhost:3000/pending`, 
+                let  response = fetch(`https://home-inventory-bml1.onrender.com/pending`,
+                //let  response = fetch(`http://localhost:3000/pending`, 
                     {
                         method:"POST",
                         headers: 
@@ -23,11 +23,15 @@ document.addEventListener("DOMContentLoaded",(()=>
                                 "Content-Type": "application/json"
                             },
                         body: JSON.stringify(y)
-                    }).then((req,res)=>
-                        {
+                    }).then(async(req,res)=>
+                        {   
+                            const data = await req.json()
+                            
                             if (req.status!=200)
                                 {
-                                    console.log(req.status)
+                                    
+                                    alert(data.Failed)
+                                    location.reload()
                                 }
                         
                             else
