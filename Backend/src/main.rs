@@ -780,7 +780,7 @@ async fn insert_item(headers:HeaderMap,State(state):State<AppState>,Json(payload
 
         };
     let category:Vec<String> = match payload.get("categories") {
-        Some(Value::String(s))=>{vec![s.to_string()]},
+        Some(Value::String(s))=>{let x = vec![s.to_string()];x},
         Some(Value::Array(s))=>{let arrayer:Vec<String>= s.iter().map(|x|x.to_string()).collect(); arrayer},
         _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}      
     };
@@ -853,7 +853,7 @@ async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(payload
         };
     //.and_then(|x|Some(x.to_string())).unwrap();
     let category:Vec<String> = match payload.get("categories") {
-        Some(Value::String(s))=>{vec![s.to_string()]},
+        Some(Value::String(s))=>{let x=vec![s.to_string()];x},
         Some(Value::Array(s))=>{let arrayer:Vec<String>= s.iter().map(|x|x.to_string()).collect(); arrayer},
         _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}      
     };
@@ -1167,7 +1167,7 @@ async fn send_notification(headers:HeaderMap,State(state):State<AppState>,Json(p
 
 
 // async fn pull_admin_data(State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
-    
+
 
 
 
