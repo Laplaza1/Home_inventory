@@ -6,19 +6,35 @@ use lazy_limit::{init_rate_limiter, Duration as dur, RuleConfig};
 
 use tower_http::cors::{CorsLayer, AllowOrigin};
 
-// use rand::{Rng};
+
 use axum::{
     http::{ HeaderValue, Method}, routing::{delete, get, post, put}, Router
 };
-use std::sync::Arc;
+use std::{env, sync::Arc};
 
 
 mod routes;
 use routes::{*};
-
+use log::{*};
+mod Auth;
+use Auth::{*};
 
 #[tokio::main]
 async fn main() {
+
+    match simple_logging::log_to_file(
+        match env::var("LOG_FILE")
+            {
+                Ok(x)=>{x},
+                Err(error)=>{error!("{error}@ finding log file! ");std::process::exit(1)},
+
+            }, LevelFilter::Info)
+                {
+                    Ok(_)=>{},
+                    Err(error)=>{error!("{error}")}
+                };
+    info!("Application Starting up ");
+    
     init_rate_limiter!(
         default: RuleConfig::new(dur::seconds(1), 5), // 5 req/s globally
         routes: [

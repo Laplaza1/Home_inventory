@@ -28,3 +28,6 @@ lazy-limit = "1.0.3"
 real = { version = "0.1.4", features = ["axum"] }
 
 hex = "0.4"
+dotenv = "0.15.0"
+log = "0.4.33"
+simple-logging = "2.0.2"
