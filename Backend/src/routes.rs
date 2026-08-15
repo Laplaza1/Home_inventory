@@ -217,7 +217,11 @@ fn create_token(value1:String,value2:String)->String{
 
 fn pull_token(header:CookieJar,key:&str)->String{
     //pulls token from headers
-    return header.get(key).expect("Error pulling token").value().to_string()
+    return match header.get(key){
+        Some(x)=>{x.value().to_string()},
+        _=>{error!("couldn't find key");"".to_string()}
+
+    };
 
 }
 pub async fn find_home(token:String,state:AppState)->String{
@@ -288,7 +292,7 @@ pub async fn check_item(State(state):State<AppState>)->HashMap<&'static str, u64
     for i in item_name{
 
         //Counts documents by filters
-        let data = item_data.count_documents(doc! {"category":doc! { "$elemMatch": { "$eq": i } }}, None).await.ok().expect("couldn't proerly find element");
+        let data = match item_data.count_documents(doc! {"category":doc! { "$elemMatch": { "$eq": i } }}, None).await.ok(){Some(x)=>{x},_=>{error!("error");std::process::exit(1)}};
         item_counter.insert(i, data);
     }
 
@@ -314,28 +318,28 @@ pub async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(pay
 
     info!{"Payload: {:?}",payload}
 
-    let username = payload
+    let username = match payload
                                 .get("username")
-                                .expect("error trying to find username")
-                                .to_string().trim_matches('"').to_string();
-    let password = payload
+                                {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}
+                               ;
+    let password = match payload
                                 .get("password")
-                                .expect("error trying to find password")
-                               .to_string().trim_matches('"').to_string();
+                                {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}
+                               ;
 
-    let email = payload
+    let email =match  payload
                                     .get("email")
-                                    .expect("Couldn't find email")
-                                    .to_string().trim_matches('"').to_string();
+                                    {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}
+                                    ;
 
-    let phone_number = payload
+    let phone_number = match payload
                                     .get("phonenumber")
-                                    .expect("Couln't find phone number")
-                                    .to_string().trim_matches('"').to_string();
-    let home = payload
+                                    {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}
+                                    ;
+    let home = match payload
                                     .get("home")
-                                    .expect("Couln't find home")
-                                    .to_string().trim_matches('"').to_string();
+                                    {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}
+                                   ;
 
     
 
@@ -344,17 +348,17 @@ pub async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(pay
     let user:User =  User { id: None, username: username.clone(), password: password.clone(),..Default::default()};
     
     user_data.insert_one(&user, None).await.ok();
-    let user_id:mongodb::Cursor<User> = user_data
+    let user_id:mongodb::Cursor<User> = match user_data
                                             .find(doc!{"username":username.clone(),"password":password.clone()},None)
                                             .await
                                             .map_err(|x|info!("Failed to create client: {}", x.kind))
-                                            .expect("error trying to collect");
+                                            {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
                                              
     
-    let convert_user_id:Vec<User>= user_id
+    let convert_user_id:Vec<User>= match user_id
                                         .try_collect()
                                         .await
-                                        .expect("Test");
+                                        {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
 
     
     
@@ -373,16 +377,16 @@ pub async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(pay
         .insert_one(&user_info1, None)
         .await
         .ok();
-    let found_user_info = user_info
+    let found_user_info =match user_info
                                                                     .find(doc! {"email":email,"phone_number":phone_number}, None)
                                                                     .await
                                                                     .map_err(|x|info!("Failed to create user info : {}", x.kind))
-                                                                    .expect("error trying to collect");
+                                                                    {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     
-    let vec_found_userinfo:Vec<UseroInfo> =found_user_info
+    let vec_found_userinfo:Vec<UseroInfo> =match found_user_info
                                                     .try_collect()
                                                     .await
-                                                    .expect("Couldnt collect into UseroInfo");
+                                                    {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
 
     info!("Created user info: {:?}",vec_found_userinfo);
 
@@ -408,9 +412,9 @@ pub async fn check_user(State(state):State<AppState>,headers:HeaderMap)->Respons
     }
     
     let user_token = CookieJar::from_headers(&headers);
-    let token = user_token
+    let token = match user_token
                                 .get("Session_ID")
-                                .expect("Some how something fucked up").value();
+                                {Some(x)=>{x.value().to_string()},_=>{error!("error");std::process::exit(1)}};
 
     let filter = doc! {"token":token};
 
@@ -426,14 +430,14 @@ pub async fn check_user(State(state):State<AppState>,headers:HeaderMap)->Respons
 
 
                                     };
-    let users: Vec<User> = curser
+    let users: Vec<User> =match curser
                                 .try_collect()
                                 .await
                                 .map_err(|e| 
                                     {
                                       return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
                                     })
-                                .expect("test");
+                                {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     info!("{:?}",users);
 
     return Json(json!({"Sucess":true})).into_response()
@@ -447,9 +451,9 @@ pub async fn change_user(headers:HeaderMap,State(state):State<AppState>, Json(pa
         _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))} 
     };
     let user_token = CookieJar::from_headers(&headers);
-    let token = user_token
+    let token = match user_token
                                 .get("Session_ID")
-                                .expect("Some how something fucked up").value();
+                                {Some(x)=>{x.value().to_string()},_=>{error!("error");std::process::exit(1)}};
 
 
     let new_item = doc! {"$set":{"token":token}};
@@ -526,15 +530,15 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
     let token =create_token(username.clone(), password.clone());
 
     let x =match db.find_one(doc! {"username":username, "password":password}, None).await{
-        Ok(x)=>{x},
+        Ok(x)=>{match x {Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
         Err(error)=>{error!("Error: {:?}",error);std::process::exit(1)},
         _=>{error!("Error:");std::process::exit(1)}
-    }.expect("failed finding one user");
+    };
     let y = match user_info.find_one(doc! {"user_id":x.id}, None).await{
-        Ok(x)=>{x},
+        Ok(x)=>{match x {Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
         Err(error)=>{error!("Error: {:?}",error);std::process::exit(1)},
         _=>{error!("Error: ");std::process::exit(1)}
-    }.expect("failed finding one user info");
+    };
 
     let mut header = HeaderMap::new();
     
@@ -547,7 +551,7 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
     let expires_at = SystemTime::now() + expires_in;
 
     
-   let mut cookier = Cookie::new("Session_ID", x.id.expect("error converting to string").to_string());
+   let mut cookier = Cookie::new("Session_ID", match x.id{Some(x)=>{x.to_string() },_=>{error!("error");std::process::exit(1)}});
         cookier.set_expires(Expiration::DateTime(expires_at.into()));
         cookier.set_secure(true);
         cookier.set_same_site(SameSite::None);
@@ -583,7 +587,7 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
     info!("hwt {:?}",home_cookie);
 
 
-    let mut cookier2 = Cookie::new("gsI", x.id.expect("nothing").to_string());
+    let mut cookier2 = Cookie::new("gsI", match x.id{Some(x)=>{x.to_string()},_=>{error!("error");std::process::exit(1)}});
         cookier2.set_expires(Expiration::DateTime(expires_at.into()));
         cookier2.set_secure(true);
         cookier2.set_same_site(SameSite::None);
@@ -601,7 +605,7 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
             return (StatusCode::EXPECTATION_FAILED , format!("Failed to update logon {}", x)).into_response()
         );
     curser.ok();
-    info!("{:?}",x.id.expect("nothing").to_string());
+    info!("{:?}",match x.id{Some(x)=>{x.to_string()},_=>{error!("error");std::process::exit(1)}});
     
     info!("{:?}",header);
     
@@ -611,7 +615,7 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
     
 
 
-    return (StatusCode::OK,header,Json(json!({"user_id":x.id.expect("nothing").to_string()})))
+    return (StatusCode::OK,header,Json(json!({"user_id":match x.id{Some(x)=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}})))
     
     
 
@@ -661,10 +665,10 @@ pub async fn get_item(State(state):State<AppState>,headers:HeaderMap)->Response<
         };
 
     
-    let items:Vec<Item> = curser
+    let items:Vec<Item> = match curser
                                 .try_collect()
                                 .await
-                                .expect("Error making item");
+                                {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     
 
     
@@ -740,8 +744,8 @@ pub async fn insert_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
     
     let quantity:  i64 = match payload.get("amount")
         {
-            Some(Value::String(x))=>{x.parse::<i64>().expect("This shouldn't be wrong if posted through")},
-            Some(Value::Number(x))=>{x.as_i64().expect("Should be right")}
+            Some(Value::String(x))=>{match x.parse::<i64>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
+            Some(Value::Number(x))=>{match x.as_i64(){Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}}
             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
 
         };
@@ -755,8 +759,8 @@ pub async fn insert_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
         };
     let unit_price:Decimal128 =match payload.get("price")
         {
-            Some(Value::String(x))=>{x.parse::<Decimal128>().expect("This Decimal cast from String shouldn't mess up but if it does its users fault")},
-            Some(Value::Number(x))=>{x.to_string().parse::<Decimal128>().expect("This Decimal cast from Number shouldn't mess up but if it does its users fault")},
+            Some(Value::String(x))=>{match x.parse::<Decimal128>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
+            Some(Value::Number(x))=>{match x.to_string().parse::<Decimal128>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
         
         };
@@ -813,8 +817,8 @@ pub async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
     
     let quantity:  i64 = match payload.get("amount")
         {
-            Some(Value::String(x))=>{x.parse::<i64>().expect("This shouldn't be wrong if posted through")},
-            Some(Value::Number(x))=>{x.as_i64().expect("Should be right")}
+            Some(Value::String(x))=>{match x.parse::<i64>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
+            Some(Value::Number(x))=>{match x.as_i64(){Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}}
             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
 
         };
@@ -823,8 +827,8 @@ pub async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
 
     let old_quantity:i64 = match payload.get("oldAmount") 
         {
-           Some(Value::String(x))=>{x.parse::<i64>().expect("This shouldn't be wrong if posted through")},
-           Some(Value::Number(x))=>{x.as_i64().expect("Should be right")}
+           Some(Value::String(x))=>{match x.parse::<i64>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
+           Some(Value::Number(x))=>{match x.as_i64(){Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}}
            _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
         };
     
@@ -838,8 +842,16 @@ pub async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
         };
     let unit_price:Decimal128 =match payload.get("price")
         {
-            Some(Value::String(x))=>{x.parse::<Decimal128>().expect("This Decimal cast from String shouldn't mess up but if it does its users fault")},
-            Some(Value::Number(x))=>{x.to_string().parse::<Decimal128>().expect("This Decimal cast from Number shouldn't mess up but if it does its users fault")},
+            Some(Value::String(x))=>{match x.parse::<Decimal128>()
+                                                                {
+                                                                    Ok(x)=>{x},
+                                                                    _=>{error!("error");std::process::exit(1)}
+                                                                }},
+            Some(Value::Number(x))=>{match x.to_string().parse::<Decimal128>()
+                                                                                {
+                                                                                    Ok(x)=>{x},
+                                                                                    _=>{error!("error");std::process::exit(1)}
+                                                                                }},
             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
         
         };
@@ -975,8 +987,21 @@ pub async fn create_recipe(headers:HeaderMap,State(state):State<AppState>,Json(p
 
             let cooktime:i64 = match payload.get("time_to_cook")
                 {
-                    Some(Value::String(s))=>{s.parse::<i64>().expect("Error converting String to i64")},
-                    Some(Value::Number(n))=>{n.as_i64().expect("Error converting Number to i64")},
+                    Some(Value::String(s))=>{match s.parse::<i64>(){
+                                                                            Ok(x)=>{x},
+                                                                            _=>{
+                                                                                    error!("error");
+                                                                                    std::process::exit(1)
+                                                                                }
+                                                                            }},
+                    Some(Value::Number(n))=>{match n.as_i64()
+                                                                {
+                                                                    Some(x)=>{x},
+                                                                    _=>{
+                                                                        error!("error");
+                                                                        std::process::exit(1)
+                                                                        }
+                                                                }},
                     _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Cant find time to cook".to_string()))}
                 };
             let description:String = match payload.get("description")
@@ -1003,7 +1028,7 @@ pub async fn create_recipe(headers:HeaderMap,State(state):State<AppState>,Json(p
                                         {
                                             "item_name":match &f[0] 
                                                 {
-                                                    Value::String(x)=>{x.trim_matches('"').parse::<String>().expect("Error")}
+                                                    Value::String(x)=>{match x.trim_matches('"').parse::<String>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}}
                                                     _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong Type wasnt string as expected".to_string()))}
                                                 },
                                             "quantity":match &f[1]
@@ -1023,7 +1048,7 @@ pub async fn create_recipe(headers:HeaderMap,State(state):State<AppState>,Json(p
                                                 },
                                             "method_of_measure":match &f[2] 
                                                 {
-                                                    Value::String(x)=>{x.trim_matches('"').parse::<String>().expect("Error")}
+                                                    Value::String(x)=>{match x.trim_matches('"').parse::<String>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}}
                                                     _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong Type wasnt string as expected".to_string()))}
                                                 },
                                         }).collect();
@@ -1098,17 +1123,17 @@ pub async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result
 pub async fn send_notification(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
 
     let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
-    let raw = payload.get("message").expect("Couldn't get message").to_string();
+    let raw = match payload.get("message"){Some(x)=>{x.to_string()},_=>{error!("error");std::process::exit(1)}};
     let messageo = raw.replace("\\n", "\n");
 
 
-    let raw_phone_number = payload.get("phone_number").expect("Couldnt find phone_number").to_string();
+    let raw_phone_number =match payload.get("phone_number"){Some(x)=>{x.to_string()},_=>{error!("error");std::process::exit(1)}};
     let phone_number = raw_phone_number.trim_matches('"').to_string();
 
 
     info!("message: {} test",messageo);
-    let credentials = env::var("notification").expect("error getting notification key");
-    let email = env::var("email").expect("Error finding email");
+    let credentials = match env::var("notification"){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+    let email = match env::var("email"){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     
     info!("{:?}",phone_number);
 
@@ -1119,7 +1144,7 @@ pub async fn send_notification(headers:HeaderMap,State(state):State<AppState>,Js
     .header("Authorization",format!("Basic {} ",encoded))
     .header("Content-Type", "application/json")
     .body(reqwest::Body::from(
-        serde_json::to_string
+        match serde_json::to_string
         (
             
             &Notification
@@ -1135,11 +1160,9 @@ pub async fn send_notification(headers:HeaderMap,State(state):State<AppState>,Js
                             message:messageo.trim_matches('"').to_string()
                         }
                 }
-        ).expect("Error converting to Json")))
-    .send()
-    .await
-    .expect("error awaiting the response");
-    info!("the status of the request is {:?}",res.status());
+        ).ok(){Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}))
+    .send().await;
+    match res {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     return Json(json!({"Success":true})).into_response();
 }
 
@@ -1159,56 +1182,38 @@ pub async fn create_pending(headers:HeaderMap,State(state):State<AppState>,Json(
 
     info!("payload {:?} ",payload);
 
-    let username:String = match payload.get("username").expect("Couldnt find username"){
-        Value::String(x)=>{x.to_string()},
-        _=>{return StatusCode::NOT_FOUND.into_response()}
-    };
+    let username:String = match payload.get("username"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
 
-    let email:String = match payload.get("email").expect("Couldnt find Email"){
-        Value::String(x)=>{x.to_string()},
-        _=>{return StatusCode::NOT_FOUND.into_response()}
-    };
-    let password = match payload.get("password").expect("couldnt find Password"){
-        Value::String(x)=>{x.to_string()},
-        _=>{return StatusCode::NOT_FOUND.into_response()}
-    };
-    let home = match payload.get("home").expect("couldnt find home"){
-        Value::String(x)=>{x.to_string()},
-        _=>{return StatusCode::NOT_FOUND.into_response()}
-    };
-    let phone_number = match payload.get("phoneNumber").expect("couldnt find phone number"){
-        Value::String(x)=>{x.to_string()},
-        _=>{return StatusCode::NOT_FOUND.into_response()}
-    };
+    let email:String = match payload.get("email"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
+    let password = match payload.get("password"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
+    let home = match payload.get("home"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
+    let phone_number = match payload.get("phoneNumber"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
     if phone_number.len()!=12{
         info!("phone # is {} long not 12",phone_number.len());
         return StatusCode::NOT_FOUND.into_response()
     }
     
-    let reason = match payload.get("reason").expect("couldnt find reason"){
-        Value::String(x)=>{x.to_string()},
-        _=>{return StatusCode::NOT_FOUND.into_response()}
-    };
+    let reason = match payload.get("reason"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
 
 
 
     let body = Pending{username:username.clone(),email:email.clone(),home:home.clone(),password:password.clone(),phone_number:phone_number.clone(),reason:reason};
 
-    let pendingo:Vec<Document> = vec![
+    let pending:Vec<Document> = vec![
         doc!{"username":username.clone()},
         doc!{"email":email.clone()},
         doc!{"home":home.clone()},
         doc!{"phone_number":phone_number.clone()},
 
     ]; 
-    let pend_filter = doc!{"$or":pendingo};
+    let pend_filter = doc!{"$or":pending};
     
-    let zy = data.count_documents(pend_filter,None).await.expect("Pending user with that info already exists");
+    let pending_document_count = match data.count_documents(pend_filter,None).await{Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     
-    if zy>0
+    if pending_document_count>0
         {
 
-            info!("{:?} Pending User documents with similar info exist ",zy);
+            info!("{:?} Pending User documents with similar info exist ",pending_document_count);
             return (StatusCode::FOUND,Json(json!({"Failed":"Already exists"}))).into_response()
 
         }
@@ -1224,23 +1229,23 @@ pub async fn create_pending(headers:HeaderMap,State(state):State<AppState>,Json(
 
     let user_info_state:Collection<UseroInfo> =  state.client.database("test").collection("user_info");
     
-    let xy = user_info_state.count_documents(filter, None).await.expect("The email or phone already exists");
+    let user_info_count = match user_info_state.count_documents(filter, None).await{Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     
-        if xy>0 {
+        if user_info_count>0 {
 
-            info!("{:?} UserInfo documents with similar info exist",xy);
+            info!("{:?} UserInfo documents with similar info exist",user_info_count);
             return (StatusCode::FOUND,Json(json!({"Failed":"Already exists"}))).into_response()
         }
 
     
 
 
-    let userexisto:Collection<User>= state.client.database("test").collection("users");
-    let yx = userexisto.count_documents(doc! {"username":username.clone()}, None).await.expect("Username already exists");
+    let userexist:Collection<User>= state.client.database("test").collection("users");
+    let user_exist_count = match userexist.count_documents(doc! {"username":username.clone()}, None).await{Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     
-    if yx>0{
+    if user_exist_count>0{
 
-        info!("{:?} User documents with similar info exist ",yx);
+        info!("{:?} User documents with similar info exist ",user_exist_count);
         return (StatusCode::FOUND,Json(json!({"Failed":"Already exists"}))).into_response()
 
     }
@@ -1291,43 +1296,41 @@ pub async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Respo
                                         .database("test")
                                         .collection("users");
 
-    let users = data1
+    let users = match data1
                                     .find(None,None)
                                     .await
-                                    .expect("error");
-    let vec_users:Vec<MicroUsero>=users
+                                    {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+    let vec_users:Vec<MicroUsero>=match users
                                     .try_collect::<Vec<MicroUsero>>()
                                     .await
-                                    .ok()
-                                    .expect("error");                             
+                                    {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};                             
 
-    let data_count= data
+    let data_count= match data
                                     .count_documents(None, None)
                                     .await
-                                    .expect("Couldnt convert into Vec ");
+                                    {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     let homes:Collection<UseroInfo> =state.client
                                             .database("test")
                                             .collection("user_info");
 
-    let home_count =homes
+    let home_count =match homes
                                 .distinct("home", None,None)
                                 .await
-                                .ok()
-                                .expect("error finding homes")
-                                .len();
+                                {Ok(x)=>{x.len()},_=>{error!("error");std::process::exit(1)}};
+                                
 
                                 
     
     
     let pending:Collection<Pending> = state.client.database("test").collection("pending");
 
-    let pending_users = pending.find(None,None).await.ok().expect("Error");
+    let pending_users = match pending.find(None,None).await.ok(){Some(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     
 
-    let pending_data:Vec<Pending> =pending_users
+    let pending_data:Vec<Pending> =match pending_users
                                         .try_collect::<Vec<Pending>>()
                                         .await
-                                        .expect("error converting");                            
+                                        {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};                            
 let item_type_count = check_item(axum::extract::State(state.clone())).await;
 
     return Json(json!({
@@ -1380,22 +1383,22 @@ pub async fn show_cookies(jar: CookieJar) -> impl IntoResponse {
 }
 
 pub async fn handle_client()->Client{
-    let client_uri = env::var("MONGODB_URI")
+    let client_uri =match env::var("MONGODB_URI")
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))
-        .expect("Error on Client URI");
+        {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
 
-    let mut options = ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
+    let mut options = match ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse client options: {}", e.kind)))
-        .expect("Error on Client options");
+        {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     options.min_pool_size = Some(2);
     options.max_pool_size = Some(10);
     options.server_selection_timeout = Some(std::time::Duration::from_secs(5));
     
     
-    let client = Client::with_options(options)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to create client: {}", e.kind)))
-        .expect("Error on client result");
+    let client = match Client::with_options(options)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR,  format!("Failed to create client: {}", e.kind)))
+        {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
     
     return client
 }
