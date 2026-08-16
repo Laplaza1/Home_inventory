@@ -20,7 +20,7 @@ use axum::{
 };
 
 use core::panic;
-use std::{any::{type_name, type_name_of_val}, collections::HashMap, env, hash::{DefaultHasher, Hash, Hasher}, time::{Duration, SystemTime}};
+use std::{any::{type_name, type_name_of_val}, collections::HashMap, env, hash::{DefaultHasher, Hash, Hasher}, process::exit, time::{Duration, SystemTime}};
 
 use mongodb::{
     bson::{doc, oid::ObjectId}, options::{ClientOptions, ResolverConfig}, Client, Collection
@@ -320,25 +320,25 @@ pub async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(pay
 
     let username = match payload
                                 .get("username")
-                                {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}
+                                {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}
                                ;
     let password = match payload
                                 .get("password")
-                                {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}
+                                {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}
                                ;
 
     let email =match  payload
                                     .get("email")
-                                    {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}
+                                    {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}
                                     ;
 
     let phone_number = match payload
                                     .get("phonenumber")
-                                    {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}
+                                    {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}
                                     ;
     let home = match payload
                                     .get("home")
-                                    {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}
+                                    {Some(Value::String(x))=>{x.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}
                                    ;
 
     
@@ -352,13 +352,13 @@ pub async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(pay
                                             .find(doc!{"username":username.clone(),"password":password.clone()},None)
                                             .await
                                             .map_err(|x|info!("Failed to create client: {}", x.kind))
-                                            {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+                                            {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
                                              
     
     let convert_user_id:Vec<User>= match user_id
                                         .try_collect()
                                         .await
-                                        {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+                                        {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
 
     
     
@@ -381,12 +381,12 @@ pub async fn create_user(headers:HeaderMap,State(state):State<AppState>,Json(pay
                                                                     .find(doc! {"email":email,"phone_number":phone_number}, None)
                                                                     .await
                                                                     .map_err(|x|info!("Failed to create user info : {}", x.kind))
-                                                                    {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+                                                                    {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     
     let vec_found_userinfo:Vec<UseroInfo> =match found_user_info
                                                     .try_collect()
                                                     .await
-                                                    {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+                                                    {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
 
     info!("Created user info: {:?}",vec_found_userinfo);
 
@@ -414,7 +414,7 @@ pub async fn check_user(State(state):State<AppState>,headers:HeaderMap)->Respons
     let user_token = CookieJar::from_headers(&headers);
     let token = match user_token
                                 .get("Session_ID")
-                                {Some(x)=>{x.value().to_string()},_=>{error!("error");std::process::exit(1)}};
+                                {Some(x)=>{x.value().to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
 
     let filter = doc! {"token":token};
 
@@ -425,8 +425,8 @@ pub async fn check_user(State(state):State<AppState>,headers:HeaderMap)->Respons
                                     .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x)))
                                     {
                                         Ok(x)=>{x},
-                                        Err(error)=>{error!("error: {:?}",error);std::process::exit(1)},
-                                        _=>{error!("error couldn't create client");std::process::exit(1)}
+                                        Err(error)=>{error!("error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
+                                        _=>{error!("error couldn't create client");return StatusCode::BAD_REQUEST.into_response()}
 
 
                                     };
@@ -437,14 +437,14 @@ pub async fn check_user(State(state):State<AppState>,headers:HeaderMap)->Respons
                                     {
                                       return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
                                     })
-                                {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+                                {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     info!("{:?}",users);
 
     return Json(json!({"Sucess":true})).into_response()
 
 }
 
-pub async fn change_user(headers:HeaderMap,State(state):State<AppState>, Json(payload): Json<serde_json::Value>)->Result<String,(StatusCode,String)>{
+pub async fn change_user(headers:HeaderMap,State(state):State<AppState>, Json(payload): Json<serde_json::Value>)->Response<Body>{
 
      let user: String=match payload.get("user_id") {
         Some(Value::String(x))=>{x.to_string()},
@@ -453,7 +453,7 @@ pub async fn change_user(headers:HeaderMap,State(state):State<AppState>, Json(pa
     let user_token = CookieJar::from_headers(&headers);
     let token = match user_token
                                 .get("Session_ID")
-                                {Some(x)=>{x.value().to_string()},_=>{error!("error");std::process::exit(1)}};
+                                {Some(x)=>{x.value().to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
 
 
     let new_item = doc! {"$set":{"token":token}};
@@ -465,14 +465,14 @@ pub async fn change_user(headers:HeaderMap,State(state):State<AppState>, Json(pa
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))){
 
             Ok(x)=>{x},
-            Err(error)=>{error!("Error: {:?}",error);std::process::exit(1)},
-            _=>{error!("Couldn't create collection of Users");std::process::exit(1)}
+            Err(error)=>{error!("Error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
+            _=>{error!("Couldn't create collection of Users");return StatusCode::BAD_REQUEST.into_response()}
         };
     
 
 
 
-    return Ok("If you're reading this then ya changed information on user".to_string())
+    return StatusCode::ACCEPTED.into_response()
 }
 
 pub async fn delete_user(headers:HeaderMap,State(state):State<AppState>,Path(id): Path<String>)->Response<Body>{
@@ -530,14 +530,14 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
     let token =create_token(username.clone(), password.clone());
 
     let x =match db.find_one(doc! {"username":username, "password":password}, None).await{
-        Ok(x)=>{match x {Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
-        Err(error)=>{error!("Error: {:?}",error);std::process::exit(1)},
-        _=>{error!("Error:");std::process::exit(1)}
+        Ok(x)=>{match x {Some(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}},
+        Err(error)=>{error!("Error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
+        _=>{error!("Error:");return StatusCode::BAD_REQUEST.into_response()}
     };
     let y = match user_info.find_one(doc! {"user_id":x.id}, None).await{
-        Ok(x)=>{match x {Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
-        Err(error)=>{error!("Error: {:?}",error);std::process::exit(1)},
-        _=>{error!("Error: ");std::process::exit(1)}
+        Ok(x)=>{match x {Some(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}},
+        Err(error)=>{error!("Error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
+        _=>{error!("Error: ");return StatusCode::BAD_REQUEST.into_response()}
     };
 
     let mut header = HeaderMap::new();
@@ -551,7 +551,7 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
     let expires_at = SystemTime::now() + expires_in;
 
     
-   let mut cookier = Cookie::new("Session_ID", match x.id{Some(x)=>{x.to_string() },_=>{error!("error");std::process::exit(1)}});
+   let mut cookier = Cookie::new("Session_ID", match x.id{Some(x)=>{x.to_string() },_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}});
         cookier.set_expires(Expiration::DateTime(expires_at.into()));
         cookier.set_secure(true);
         cookier.set_same_site(SameSite::None);
@@ -559,8 +559,8 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
         cookier.set_path("/");
      header.append(SET_COOKIE, match cookier.to_string().parse(){
         Ok(x)=>{x},
-        Err(error)=>{error!("Error: {:?}",error);std::process::exit(1)},
-        _=>{error!("Error handling header");std::process::exit(1)}
+        Err(error)=>{error!("Error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
+        _=>{error!("Error handling header");return StatusCode::BAD_REQUEST.into_response()}
     });
 
     info!("Session_ID {:?}",cookier);  
@@ -575,8 +575,8 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
         .parse()
         {
         Ok(x)=>{x},
-        Err(error)=>{error!("error: {:?}",error);std::process::exit(1)},
-        _=>{error!("Error: ");std::process::exit(1)}
+        Err(error)=>{error!("error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
+        _=>{error!("Error: ");return StatusCode::BAD_REQUEST.into_response()}
         });
 
     let encoded = hex::encode(y.home.clone());
@@ -587,7 +587,7 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
     info!("hwt {:?}",home_cookie);
 
 
-    let mut cookier2 = Cookie::new("gsI", match x.id{Some(x)=>{x.to_string()},_=>{error!("error");std::process::exit(1)}});
+    let mut cookier2 = Cookie::new("gsI", match x.id{Some(x)=>{x.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}});
         cookier2.set_expires(Expiration::DateTime(expires_at.into()));
         cookier2.set_secure(true);
         cookier2.set_same_site(SameSite::None);
@@ -605,7 +605,7 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
             return (StatusCode::EXPECTATION_FAILED , format!("Failed to update logon {}", x)).into_response()
         );
     curser.ok();
-    info!("{:?}",match x.id{Some(x)=>{x.to_string()},_=>{error!("error");std::process::exit(1)}});
+    info!("{:?}",match x.id{Some(x)=>{x.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}});
     
     info!("{:?}",header);
     
@@ -615,7 +615,7 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
     
 
 
-    return (StatusCode::OK,header,Json(json!({"user_id":match x.id{Some(x)=>{x.to_string()},_=>{error!("error");std::process::exit(1)}}})))
+    return (StatusCode::OK,header,Json(json!({"user_id":match x.id{Some(x)=>{x.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}}))).into_response()
     
     
 
@@ -660,15 +660,15 @@ pub async fn get_item(State(state):State<AppState>,headers:HeaderMap)->Response<
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x.kind)))
         {
             Ok(x)=>{x},
-            Err(error)=>{error!("error: {:?}",error);std::process::exit(1)},
-            _=>{error!("Error get items");std::process::exit(1)}
+            Err(error)=>{error!("error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
+            _=>{error!("Error get items");return StatusCode::BAD_REQUEST.into_response()}
         };
 
     
     let items:Vec<Item> = match curser
                                 .try_collect()
                                 .await
-                                {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+                                {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     
 
     
@@ -705,8 +705,8 @@ pub async fn specific_item()->Result<Json<Vec<Item>>,(StatusCode,String)>{
         .await
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))){
             Ok(x)=>{x},
-            Err(error)=>{error!("error: {:?}",error);std::process::exit(1)},
-            _=>{error!("Couldn't create collection of items");std::process::exit(1)}
+            Err(error)=>{error!("error: {:?}",error);exit(1)},
+            _=>{error!("Couldn't create collection of items");exit(1)}
         };
 
      let items:Vec<Item> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x))})?;
@@ -717,7 +717,7 @@ pub async fn specific_item()->Result<Json<Vec<Item>>,(StatusCode,String)>{
 
 
 
-pub async fn insert_item(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>
+pub async fn insert_item(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>
 
 {
     let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
@@ -744,8 +744,8 @@ pub async fn insert_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
     
     let quantity:  i64 = match payload.get("amount")
         {
-            Some(Value::String(x))=>{match x.parse::<i64>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
-            Some(Value::Number(x))=>{match x.as_i64(){Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}}
+            Some(Value::String(x))=>{match x.parse::<i64>(){Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}},
+            Some(Value::Number(x))=>{match x.as_i64(){Some(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}}
             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
 
         };
@@ -759,8 +759,8 @@ pub async fn insert_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
         };
     let unit_price:Decimal128 =match payload.get("price")
         {
-            Some(Value::String(x))=>{match x.parse::<Decimal128>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
-            Some(Value::Number(x))=>{match x.to_string().parse::<Decimal128>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
+            Some(Value::String(x))=>{match x.parse::<Decimal128>(){Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}},
+            Some(Value::Number(x))=>{match x.to_string().parse::<Decimal128>(){Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}},
             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
         
         };
@@ -768,7 +768,7 @@ pub async fn insert_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
     let date:DateTime=  match payload.get("time") {
         Some(Value::Number(x))=>{match x.as_i64() {
          Some(x)=>{bson::DateTime::from_millis(x)},
-         _ => {return Err((StatusCode::NOT_FOUND,"Wrong input".to_string()))}   
+         _ => {return (StatusCode::NOT_FOUND,"Wrong input".to_string()).into_response()}   
         }}
         _ =>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
     };
@@ -789,11 +789,11 @@ pub async fn insert_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
 
     info!("{:?}",duration);
 
-    return Ok(Json(json!({"Success":true})))
+    return Json(json!({"Success":true})).into_response()
 
 }
 
-pub async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>{
+pub async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
 
     
     info!("Payload: {:#?}",payload);
@@ -817,8 +817,8 @@ pub async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
     
     let quantity:  i64 = match payload.get("amount")
         {
-            Some(Value::String(x))=>{match x.parse::<i64>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
-            Some(Value::Number(x))=>{match x.as_i64(){Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}}
+            Some(Value::String(x))=>{match x.parse::<i64>(){Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}},
+            Some(Value::Number(x))=>{match x.as_i64(){Some(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}}
             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
 
         };
@@ -827,8 +827,8 @@ pub async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
 
     let old_quantity:i64 = match payload.get("oldAmount") 
         {
-           Some(Value::String(x))=>{match x.parse::<i64>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}},
-           Some(Value::Number(x))=>{match x.as_i64(){Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}}
+           Some(Value::String(x))=>{match x.parse::<i64>(){Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}},
+           Some(Value::Number(x))=>{match x.as_i64(){Some(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}}
            _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
         };
     
@@ -845,12 +845,12 @@ pub async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
             Some(Value::String(x))=>{match x.parse::<Decimal128>()
                                                                 {
                                                                     Ok(x)=>{x},
-                                                                    _=>{error!("error");std::process::exit(1)}
+                                                                    _=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}
                                                                 }},
             Some(Value::Number(x))=>{match x.to_string().parse::<Decimal128>()
                                                                                 {
                                                                                     Ok(x)=>{x},
-                                                                                    _=>{error!("error");std::process::exit(1)}
+                                                                                    _=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}
                                                                                 }},
             _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong input".to_string()))}
         
@@ -883,7 +883,7 @@ pub async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
 
     let difference = match Some(quantity-old_quantity){
         Some(x)=>{x},
-        _=>{error!("Error couldnt handle the calculation check values");std::process::exit(1)}
+        _=>{error!("Error couldnt handle the calculation check values");return StatusCode::BAD_REQUEST.into_response()}
     };
     
     let change_line = doc! {"item":item_id.clone(),"change":difference,"price":unit_price,"date":date};
@@ -891,7 +891,7 @@ pub async fn change_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
     let _ = state.client.database("test").collection("change").insert_one(change_line, None).await;
 
 
-    return Ok(Json(json!({"Success":true})))
+    return Json(json!({"Success":true})).into_response()
 
 }
 
@@ -920,7 +920,7 @@ pub async fn delete_item(headers:HeaderMap,State(state):State<AppState>,Json(pay
 
 }
 
-pub async fn pull_data(headers:HeaderMap,State(state):State<AppState>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+pub async fn pull_data(headers:HeaderMap,State(state):State<AppState>)->Response<Body>{
     let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
     let time = Instant::now();
     let data:Collection<Document> = state.client.database("test").collection("change");
@@ -930,22 +930,22 @@ pub async fn pull_data(headers:HeaderMap,State(state):State<AppState>)->Result<J
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create curser: {}", x.kind)))
         {
             Ok(x)=>{x},
-            Err(error)=>{error!("Error: {:?}",error);std::process::exit(1)},
-            _=>{error!("Error");std::process::exit(1)}
+            Err(error)=>{error!("Error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
+            _=>{error!("Error");return StatusCode::BAD_REQUEST.into_response()}
         };
 
 
     
-    let items:Vec<Document> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind))})?;
+    let items:Vec<Document> =match curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind))}){Ok(x)=>{x},_=>{error!("error");exit(1)}};
     let duration = time.elapsed();
     info!("pull_data took {:?}",duration);
-    return Ok(Json(items))
+    return Json(items).into_response()
 
 }
 
 
 
-pub async fn pull_specific_data(headers:HeaderMap,Path(id): Path<String>,State(state):State<AppState>)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+pub async fn pull_specific_data(headers:HeaderMap,Path(id): Path<String>,State(state):State<AppState>)->Response<Body>{
     
     let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
     let start = Instant::now();
@@ -960,22 +960,22 @@ pub async fn pull_specific_data(headers:HeaderMap,Path(id): Path<String>,State(s
         .await
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x))){
             Ok(x)=>{x},
-            Err(error)=>{error!("Error: {:?}",error);std::process::exit(1)},
-            _=>{error!("Error creating client");std::process::exit(1)}
+            Err(error)=>{error!("Error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
+            _=>{error!("Error creating client");return StatusCode::BAD_REQUEST.into_response()}
         };
 
 
     let duration =start.elapsed();
-    let items:Vec<Document> = curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x))})?;
+    let items:Vec<Document> = match curser.try_collect().await.map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x))}){Ok(x)=>{x},_=>{error!("error");exit(1)}};
     info!("Pulling specific data took {:#?}",duration);
     
-    return Ok(Json(items))
+    return Json(items).into_response()
 
 }
 
 //Recipe
 
-pub async fn create_recipe(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Result<Json<Value>,(StatusCode,String)>
+pub async fn create_recipe(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>
         {
             let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
             info!("{:#?}",payload);
@@ -991,7 +991,7 @@ pub async fn create_recipe(headers:HeaderMap,State(state):State<AppState>,Json(p
                                                                             Ok(x)=>{x},
                                                                             _=>{
                                                                                     error!("error");
-                                                                                    std::process::exit(1)
+                                                                                    return StatusCode::BAD_REQUEST.into_response()
                                                                                 }
                                                                             }},
                     Some(Value::Number(n))=>{match n.as_i64()
@@ -999,7 +999,7 @@ pub async fn create_recipe(headers:HeaderMap,State(state):State<AppState>,Json(p
                                                                     Some(x)=>{x},
                                                                     _=>{
                                                                         error!("error");
-                                                                        std::process::exit(1)
+                                                                        return StatusCode::BAD_REQUEST.into_response()
                                                                         }
                                                                 }},
                     _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Cant find time to cook".to_string()))}
@@ -1023,39 +1023,46 @@ pub async fn create_recipe(headers:HeaderMap,State(state):State<AppState>,Json(p
                     },
                 "ingredients":match payload.get("ingredients") 
                 {
-                    Some(Value::Array(x))=>{let ab:Vec<Document> =  x.iter().map(|f|
+                    Some(Value::Array(x))=>{
+                        let ab:Vec<Document> =  x.iter().map(|f|
                                         doc! 
                                         {
                                             "item_name":match &f[0] 
                                                 {
-                                                    Value::String(x)=>{match x.trim_matches('"').parse::<String>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}}
-                                                    _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong Type wasnt string as expected".to_string()))}
+                                                    Value::String(x)=>{
+                                                        match x.trim_matches('"').parse::<String>()
+                                                                                                    {
+                                                                                                        Ok(x)=>{x}
+                                                                                                        ,_=>{error!("error");exit(1)}
+                                                                                                    }
+                                                                        }
+                                                    _=>{panic!("{:#?}", exit(1))}
                                                 },
                                             "quantity":match &f[1]
                                                 {
 
                                                     Value::String(x)=> {match x.parse::<i64>(){
                                                         Ok(x)=>{x},
-                                                        Err(error)=>{error!("Error: {:?}",error);std::process::exit(1)},
-                                                        _=>{error!("Error: ");std::process::exit(1)}
+                                                        Err(error)=>{error!("Error: {:?}",error);exit(1)},
+                                                        _=>{error!("Error: ");exit(1)}
                                                     }},
                                                     Value::Number(x) => {match x.as_i64(){
                                                         Some(x)=>{x},
-                                                        _=>{error!("Error: ");std::process::exit(1)}
+                                                        _=>{error!("Error: ");exit(1)}
                                                     }},
-                                                    _ => {panic!("{:#?}", (StatusCode::NOT_FOUND,"Error on Second Quantity check".to_string()))}
+                                                    _ => {panic!("{:#?}", exit(1))}
                         
                                                 },
                                             "method_of_measure":match &f[2] 
                                                 {
-                                                    Value::String(x)=>{match x.trim_matches('"').parse::<String>(){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}}}
-                                                    _=>{panic!("{:#?}", (StatusCode::NOT_FOUND,"Wrong Type wasnt string as expected".to_string()))}
+                                                    Value::String(x)=>{match x.trim_matches('"').parse::<String>(){Ok(x)=>{x},_=>{error!("error");exit(1)}}},
+                                                    _=>{panic!("{:#?}",exit(1))}
                                                 },
                                         }).collect();
                                         
                                         ab
                                 }
-                    _ =>  {panic!("{:#?}", (StatusCode::NOT_FOUND,"Cant find vec".to_string()))},
+                    _ =>  {panic!("{:#?}", (StatusCode::NOT_FOUND,"Cant find vec".to_string()).into_response())},
                 },
                 "steps": steps,
                 "time_to_cook":cooktime,
@@ -1075,12 +1082,12 @@ pub async fn create_recipe(headers:HeaderMap,State(state):State<AppState>,Json(p
         
 
 
-        return Ok(Json(json!({"Sucess":true})))
+        return Json(json!({"Sucess":true})).into_response()
 
 
     }
 
-pub async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result<Json<Vec<Document>>,(StatusCode,String)>{
+pub async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Response<Body>{
 
     let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
     info!("Headers{:?}",&headers.clone());
@@ -1088,7 +1095,7 @@ pub async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result
     info!("Token exists {}",token);
     if token==false {
 
-        return Err((StatusCode::FORBIDDEN,"User isnt logged in".to_string()))
+        return (StatusCode::FORBIDDEN,"User isnt logged in".to_string()).into_response()
     }
     let data:Collection<Document> = state.client
                                             .database("test")
@@ -1100,22 +1107,22 @@ pub async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result
         .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create curser: {}", x.kind)))
         {
             Ok(x)=>{x},
-            Err(error)=>{error!("Error: {:?}",error);std::process::exit(1)},
-            _=>{error!("Error: creating document");std::process::exit(1)}
+            Err(error)=>{error!("Error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
+            _=>{error!("Error: creating document");return StatusCode::BAD_REQUEST.into_response()}
         };
     
     let end_time = time.elapsed();
 
-    let items:Vec<Document> = curser
+    let items:Vec<Document> = match curser
                                     .try_collect()
                                     .await
-                                    .map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind))})?;
+                                    .map_err(|x|{(StatusCode::EXPECTATION_FAILED,format!("Error: {} happend when creating item",x.kind)).into_response()}){Ok(x)=>{x},_=>{error!("error");exit(1)}};
 
     
 
     info!{"{:?}",end_time}
 
-    return Ok(Json(items));
+    return Json(items).into_response();
 }
 
 
@@ -1123,17 +1130,17 @@ pub async fn get_recipes(State(state):State<AppState>,headers:HeaderMap)->Result
 pub async fn send_notification(headers:HeaderMap,State(state):State<AppState>,Json(payload): Json<serde_json::Value>)->Response<Body>{
 
     let home =pull_token(CookieJar::from_headers(&headers.clone()), "hwt");
-    let raw = match payload.get("message"){Some(x)=>{x.to_string()},_=>{error!("error");std::process::exit(1)}};
+    let raw = match payload.get("message"){Some(x)=>{x.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     let messageo = raw.replace("\\n", "\n");
 
 
-    let raw_phone_number =match payload.get("phone_number"){Some(x)=>{x.to_string()},_=>{error!("error");std::process::exit(1)}};
+    let raw_phone_number =match payload.get("phone_number"){Some(x)=>{x.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     let phone_number = raw_phone_number.trim_matches('"').to_string();
 
 
     info!("message: {} test",messageo);
-    let credentials = match env::var("notification"){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
-    let email = match env::var("email"){Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+    let credentials = match env::var("notification"){Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
+    let email = match env::var("email"){Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     
     info!("{:?}",phone_number);
 
@@ -1160,9 +1167,9 @@ pub async fn send_notification(headers:HeaderMap,State(state):State<AppState>,Js
                             message:messageo.trim_matches('"').to_string()
                         }
                 }
-        ).ok(){Some(x)=>{x},_=>{error!("error");std::process::exit(1)}}))
+        ).ok(){Some(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}}))
     .send().await;
-    match res {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+    match res {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     return Json(json!({"Success":true})).into_response();
 }
 
@@ -1182,18 +1189,18 @@ pub async fn create_pending(headers:HeaderMap,State(state):State<AppState>,Json(
 
     info!("payload {:?} ",payload);
 
-    let username:String = match payload.get("username"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
+    let username:String = match payload.get("username"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
 
-    let email:String = match payload.get("email"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
-    let password = match payload.get("password"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
-    let home = match payload.get("home"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
-    let phone_number = match payload.get("phoneNumber"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
+    let email:String = match payload.get("email"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
+    let password = match payload.get("password"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
+    let home = match payload.get("home"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
+    let phone_number = match payload.get("phoneNumber"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     if phone_number.len()!=12{
         info!("phone # is {} long not 12",phone_number.len());
         return StatusCode::NOT_FOUND.into_response()
     }
     
-    let reason = match payload.get("reason"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");std::process::exit(1)}};
+    let reason = match payload.get("reason"){Some(Value::String(s))=>{s.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
 
 
 
@@ -1208,7 +1215,7 @@ pub async fn create_pending(headers:HeaderMap,State(state):State<AppState>,Json(
     ]; 
     let pend_filter = doc!{"$or":pending};
     
-    let pending_document_count = match data.count_documents(pend_filter,None).await{Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+    let pending_document_count = match data.count_documents(pend_filter,None).await{Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     
     if pending_document_count>0
         {
@@ -1229,7 +1236,7 @@ pub async fn create_pending(headers:HeaderMap,State(state):State<AppState>,Json(
 
     let user_info_state:Collection<UseroInfo> =  state.client.database("test").collection("user_info");
     
-    let user_info_count = match user_info_state.count_documents(filter, None).await{Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+    let user_info_count = match user_info_state.count_documents(filter, None).await{Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     
         if user_info_count>0 {
 
@@ -1241,7 +1248,7 @@ pub async fn create_pending(headers:HeaderMap,State(state):State<AppState>,Json(
 
 
     let userexist:Collection<User>= state.client.database("test").collection("users");
-    let user_exist_count = match userexist.count_documents(doc! {"username":username.clone()}, None).await{Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+    let user_exist_count = match userexist.count_documents(doc! {"username":username.clone()}, None).await{Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     
     if user_exist_count>0{
 
@@ -1299,16 +1306,16 @@ pub async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Respo
     let users = match data1
                                     .find(None,None)
                                     .await
-                                    {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+                                    {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     let vec_users:Vec<MicroUsero>=match users
                                     .try_collect::<Vec<MicroUsero>>()
                                     .await
-                                    {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};                             
+                                    {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};                             
 
     let data_count= match data
                                     .count_documents(None, None)
                                     .await
-                                    {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+                                    {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     let homes:Collection<UseroInfo> =state.client
                                             .database("test")
                                             .collection("user_info");
@@ -1316,7 +1323,7 @@ pub async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Respo
     let home_count =match homes
                                 .distinct("home", None,None)
                                 .await
-                                {Ok(x)=>{x.len()},_=>{error!("error");std::process::exit(1)}};
+                                {Ok(x)=>{x.len()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
                                 
 
                                 
@@ -1324,13 +1331,13 @@ pub async fn general_data(headers:HeaderMap,State(state):State<AppState>)->Respo
     
     let pending:Collection<Pending> = state.client.database("test").collection("pending");
 
-    let pending_users = match pending.find(None,None).await.ok(){Some(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+    let pending_users = match pending.find(None,None).await.ok(){Some(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
     
 
     let pending_data:Vec<Pending> =match pending_users
                                         .try_collect::<Vec<Pending>>()
                                         .await
-                                        {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};                            
+                                        {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};                            
 let item_type_count = check_item(axum::extract::State(state.clone())).await;
 
     return Json(json!({
@@ -1385,12 +1392,12 @@ pub async fn show_cookies(jar: CookieJar) -> impl IntoResponse {
 pub async fn handle_client()->Client{
     let client_uri =match env::var("MONGODB_URI")
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Missing MONGODB_URI".to_string()))
-        {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+        {Ok(x)=>{x},_=>{error!("error");exit(1)}};
 
     let mut options = match ClientOptions::parse_with_resolver_config(&client_uri, ResolverConfig::cloudflare())
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse client options: {}", e.kind)))
-        {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+        {Ok(x)=>{x},_=>{error!("error");exit(1)}};
     options.min_pool_size = Some(2);
     options.max_pool_size = Some(10);
     options.server_selection_timeout = Some(std::time::Duration::from_secs(5));
@@ -1398,7 +1405,7 @@ pub async fn handle_client()->Client{
     
     let client = match Client::with_options(options)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR,  format!("Failed to create client: {}", e.kind)))
-        {Ok(x)=>{x},_=>{error!("error");std::process::exit(1)}};
+        {Ok(x)=>{x},_=>{error!("error");exit(1)}};
     
     return client
 }
