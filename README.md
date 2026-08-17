@@ -11,6 +11,11 @@ Track household items, quantities, categories, prices, and recipes with a modern
 
 ---
 
+## The Why
+
+Every month in my household we did a physcial check on expirations. We consistantly double ordered ingredients that we had but forgot we had.One day when doing a full inventory of what we had we ended up with upto 5x of the same item. This is my attempt to solve that. 
+
+
 ## Overview
 
 Home_inventory lets you manage the contents of your home (or multiple homes) in one place. You can add items with categories, quantities, units of measure, and unit prices; organize them by home; create recipes that reference inventory items; handle user registration/approval flows; and pull basic data for charts and dashboards.With agentic assistance provided in the management.
@@ -76,10 +81,12 @@ Home_inventory/
 ├── Backend/                  # Rust Axum API
 │   ├── src/
 │   │   ├── main.rs           # Server setup, routes, CORS, rate limiting
+│   │   ├── Auth.rs           # Authentication,Cookies
+│   │   ├── agent.rs          # Agent, orchestration, api
 │   │   └── routes.rs         # Handlers, models, business logic
 │   ├── Cargo.toml
-│   ├── Cargo.lock
-│   └── README.md
+│   │ 
+│   └── Cargo.lock
 ├── Frontend/                 # Client-side application
 │   ├── js/                   # JavaScript logic
 │   └── static/               # HTML, CSS, assets
