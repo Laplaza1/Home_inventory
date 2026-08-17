@@ -209,7 +209,7 @@ Serve the `Frontend` directory with any static file server (Live Server, `python
 - Some recipe-related routes (specific get / delete) are commented out / still under development.
 - Logging and timing (`Instant`) are used in several places for performance observation.
 - The codebase is still evolving — expect some rough edges, especially around error handling and input validation.
-- currently there is a TON of unwraps.
+
 
 ---
 
