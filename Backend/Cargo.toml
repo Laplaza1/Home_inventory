@@ -31,3 +31,4 @@ hex = "0.4"
 dotenv = "0.15.0"
 log = "0.4.33"
 simple-logging = "2.0.2"
+jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"]}

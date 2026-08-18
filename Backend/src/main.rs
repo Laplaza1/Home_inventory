@@ -11,7 +11,7 @@ use axum::{
     http::{ HeaderValue, Method}, routing::{delete, get, post, put}, Router
 };
 use std::{env, sync::Arc};
-
+use dotenv::dotenv;
 
 mod routes;
 use routes::{*};
@@ -21,7 +21,7 @@ use Auth::{*};
 
 #[tokio::main]
 async fn main() {
-
+    dotenv().ok();
     match simple_logging::log_to_file(
         match env::var("LOG_FILE")
             {
@@ -34,7 +34,7 @@ async fn main() {
                     Err(error)=>{error!("{error}")}
                 };
     info!("Application Starting up ");
-    
+    test_jwt_().await;
     init_rate_limiter!(
         default: RuleConfig::new(dur::seconds(1), 5), // 5 req/s globally
         routes: [
