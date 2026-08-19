@@ -10,12 +10,17 @@ use jsonwebtoken::{
 use log::*;
 use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
+use bson::oid::ObjectId;
+
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     /// Subject – the MongoDB ObjectId of the user .
     pub sub: String,
-
+    
+    /// Optional ObjectId for _id
+    // #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
+    // pub id: Option<ObjectId>, 
     /// Login username.
     pub username: String,
 
@@ -28,7 +33,12 @@ pub struct Claims {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub phone_number: Option<String>,
+    
 
+    pub status: Option<i64>,
+
+
+    pub title:Option<String>,
     /// Access level struct.
     pub access: String,
 
@@ -67,7 +77,9 @@ impl std::fmt::Display for JwtError {
 
 impl std::error::Error for JwtError {}
 pub fn create_jwt(
-    user_id: &str,
+    id:String ,
+    status:Option<i64> ,
+    title:Option<String>,
     username: &str,
     home: &str,
     email: Option<String>,
@@ -85,7 +97,7 @@ pub fn create_jwt(
     let nbf = iat;
 
     let claims = Claims {
-        sub: user_id.to_string(),
+        sub: id.to_string(),
         username: username.to_string(),
         home: home.to_string(),
         email,
@@ -95,6 +107,8 @@ pub fn create_jwt(
         iat,
         exp,
         nbf,
+        status,
+        title,
     };
 
     let header = Header::new(Algorithm::HS256);
@@ -147,13 +161,17 @@ pub async fn test_jwt_() {
     }
 
     match create_jwt(
-        "676abc1234567890abcdef01",           
+        "676abc1234567890abcdef01".to_string(),
+        Some(1),
+        Some("Master of home".to_string()) ,         
         "john.doe",
         "Main House",
         Some("john.doe@example.com".into()),
         Some("+15551234567".into()),
         "User",
         24,  // in hours
+        
+        
     ) {
         Ok(token) => {
             info!("Created jwt:\n{}", token);

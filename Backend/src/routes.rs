@@ -34,6 +34,8 @@ use std::time::{Instant};
 use sha2::{Sha256,Digest};
 use hex;
 
+use crate::Auth::create_jwt;
+
 
 
 
@@ -149,6 +151,20 @@ pub enum AccessLevel{
     User
 
 }
+
+
+
+impl AccessLevel {
+    fn as_str(&self) -> &str {
+        match self {
+            AccessLevel::Creator => "Creator",
+            AccessLevel::Admin => "Admin",
+            AccessLevel::User => "User",
+        }
+    }
+}
+
+
 #[derive(Debug, Serialize, Deserialize,Clone,Default)]
 pub struct UseroInfo{
     
@@ -539,6 +555,9 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
         Err(error)=>{error!("Error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
         _=>{error!("Error: ");return StatusCode::BAD_REQUEST.into_response()}
     };
+    let token = create_jwt(x.id.as_ref()
+        .map(|id| id.to_hex())
+        .unwrap_or_else(|| "no_id".to_string()), x.status, x.title, &x.username, &y.home, Some(y.email), Some(y.phone_number), y.access.as_str(), 16);
 
     let mut header = HeaderMap::new();
     
@@ -565,12 +584,12 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
 
     info!("Session_ID {:?}",cookier);  
 
-    let mut home_cookie = Cookie::new("hwt", y.home.clone());
-        home_cookie.set_expires(Expiration::DateTime(expires_at.into()));
-        home_cookie.set_secure(true);
-        home_cookie.set_same_site(SameSite::None);
-        home_cookie.set_path("/");
-     header.append(SET_COOKIE, match home_cookie
+    let mut jwt_cookie = Cookie::new("token", token.expect("Error converting jwt"));
+        jwt_cookie.set_expires(Expiration::DateTime(expires_at.into()));
+        jwt_cookie.set_secure(true);
+        jwt_cookie.set_same_site(SameSite::None);
+        jwt_cookie.set_path("/");
+     header.append(SET_COOKIE, match jwt_cookie
         .to_string()
         .parse()
         {
@@ -581,10 +600,10 @@ pub async fn login(headers:HeaderMap,State(state):State<AppState>,Json(payload):
 
     let encoded = hex::encode(y.home.clone());
 
-    info!("home_cookie to hex: {} ",encoded);
+    info!("jwt_cookie to hex: {} ",encoded);
 
     
-    info!("hwt {:?}",home_cookie);
+    info!("hwt {:?}",jwt_cookie);
 
 
     let mut cookier2 = Cookie::new("gsI", match x.id{Some(x)=>{x.to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}});
