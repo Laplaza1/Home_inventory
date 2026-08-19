@@ -4,7 +4,7 @@ use bson::{DateTime, Decimal128, Document};
 use base64::{engine::general_purpose, Engine as _};
 use ::cookie::{Cookie, Expiration, SameSite};
 use log::{*};
-
+use crate::Auth::*;
 
 
 // use chrono::{Utc};
@@ -34,7 +34,7 @@ use std::time::{Instant};
 use sha2::{Sha256,Digest};
 use hex;
 
-use crate::Auth::create_jwt;
+
 
 
 
@@ -421,7 +421,7 @@ pub async fn check_user(State(state):State<AppState>,headers:HeaderMap)->Respons
     
     info!("Header {:?}",headers);
 
-    let token = check_token(CookieJar::from_headers(&headers.clone()),"Session_ID");
+    let token = check_token(CookieJar::from_headers(&headers.clone()),"token");
     if token==false {
 
         return (StatusCode::FORBIDDEN,"User isnt logged in").into_response()
@@ -429,34 +429,17 @@ pub async fn check_user(State(state):State<AppState>,headers:HeaderMap)->Respons
     
     let user_token = CookieJar::from_headers(&headers);
     let token = match user_token
-                                .get("Session_ID")
+                                .get("token")
                                 {Some(x)=>{x.value().to_string()},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
 
-    let filter = doc! {"token":token};
+    
+    let valid_user = validate_jwt(&token);
+    if valid_user.is_ok() == false {
+        return (StatusCode::BAD_REQUEST,Json(json!({"failed":valid_user.is_ok()}))).into_response()
+    }
+    return Json(json!({"success":valid_user.is_ok()})).into_response()
 
-    let user: Collection<User> = state.client.database("test").collection("users");
-    let curser = match user
-                                    .find(filter,None)
-                                    .await
-                                    .map_err(|x|(StatusCode::EXPECTATION_FAILED , format!("Failed to create client: {}", x)))
-                                    {
-                                        Ok(x)=>{x},
-                                        Err(error)=>{error!("error: {:?}",error);return StatusCode::BAD_REQUEST.into_response()},
-                                        _=>{error!("error couldn't create client");return StatusCode::BAD_REQUEST.into_response()}
-
-
-                                    };
-    let users: Vec<User> =match curser
-                                .try_collect()
-                                .await
-                                .map_err(|e| 
-                                    {
-                                      return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
-                                    })
-                                {Ok(x)=>{x},_=>{error!("error");return StatusCode::BAD_REQUEST.into_response()}};
-    info!("{:?}",users);
-
-    return Json(json!({"Sucess":true})).into_response()
+   
 
 }
 

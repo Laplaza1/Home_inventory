@@ -149,7 +149,7 @@ pub fn validate_jwt(token: &str) -> Result<Claims, JwtError> {
         )));
     }
     if token_data.claims.exp < Utc::now().timestamp(){
-        return Err(JwtError::InvalidClaims("sub (user id) is empty".into()));
+        return Err(JwtError::InvalidClaims("sub (exp) is less than today".into()));
     }
 
     Ok(token_data.claims)
