@@ -148,6 +148,9 @@ pub fn validate_jwt(token: &str) -> Result<Claims, JwtError> {
             token_data.claims.access
         )));
     }
+    if token_data.claims.exp < Utc::now().timestamp(){
+        return Err(JwtError::InvalidClaims("sub (user id) is empty".into()));
+    }
 
     Ok(token_data.claims)
 }
